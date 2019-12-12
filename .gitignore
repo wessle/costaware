@@ -1,5 +1,6 @@
 costaware.egg-info
 .venv
 **__pycache__
+**.swp
 
 !.gitignore
