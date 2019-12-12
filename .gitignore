@@ -1,0 +1,5 @@
+costaware.egg-info
+.venv
+**__pycache__
+
+!.gitignore
