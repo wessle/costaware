@@ -8,3 +8,12 @@ After cloning, simply `cd` into the repo and do `pip install -e .`.
 
 ### Adding New Dependencies
 Add new dependencies by editing the `install_requires` field in setup.py, then do `pip install -e .`.
+
+### TODOs
+
+- [x] Implement `Asset` class 
+- [ ] Write unit tests for `Asset` class
+- [ ] Implement `Portfolio` class
+- [ ] Write unit tests for `Portfolio` class
+- [ ] Implement OpenAI Gym `env` subclass for financial simulation
+- [ ] Write tests for environment
