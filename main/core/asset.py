@@ -3,50 +3,99 @@ from typing import Generator, Tuple
 
 
 # Core generator methods  
-# 
-# These are the underlying models needed for asset price simulations. 
 
 
-def wiener_process(start_t: float, 
-                   increment_t: float) -> Generator[float, None, None]:
+def wiener_process(increment_t: float) -> Generator[float, None, None]:
+    """Wiener process generator
+
+    This produces a generator of the form W(0), W(dt), W(2dt), ..., where dt is
+    the amount of time by which the process increments.
+
+    The Wiener process W(t) is determined by the following properties:
+    
+    1. W(0) = 0
+    2. W(t) has independent increments.
+    3. W(t+u) - W(t) is normally distributed with mean 0 and variance u
+    4. W has continuous paths.
+
+    Parameters
+    ----------
+    increment_t: float
+        the amount of time by which the process increments
+
     """
-    Wiener process generator
-    """
-    wiener = 0.
     normal_generator = np.random.normal
+    wiener = 0.
     while True:
         yield wiener
         wiener += normal_generator(scale=np.sqrt(increment_t))
 
 
-def brownian_motion(start_t: float, 
-                    increment_t: float, 
+def brownian_motion(increment_t: float, 
                     origin_x: float, 
                     drift: float, 
                     scale: float) -> Generator[float, None, None]:
     """
     Brownian motion generator
+
+    A Brownian motion satisfies the stochastic differential equation
+
+        dB = mu dt + sigma dW
+
+    where dW is the standard Wiener process, mu is a drift parameter, and sigma
+    is a scale parameter.
+
+    Parameters
+    ----------
+    increment_t: float
+        the amount of time by which the process increments
+    origin_x: float
+        the initial value of the process
+    drift: float
+        the drift parameter of the process (mu)
+    scale: float
+        the scale parameter of the process (sigma)
     """
-    wiener = wiener_process(start_t, increment_t)
+    wiener = wiener_process(increment_t)
     brownian = origin_x + next(wiener)
     while True:
         yield brownian
         brownian += drift * increment_t + scale * next(wiener)
 
 
-def geometric_brownian_motion(start_t: float, 
-                              increment_t: float, 
+def geometric_brownian_motion(increment_t: float, 
                               origin_x: float, 
                               drift: float, 
                               scale: float) -> Generator[float, None, None]:
     """
     Geometric Brownian motion generator
+
+    A Geometric Brownian motioon satisfies the stochastic differential equation
+
+        dG = mu G dt + sigma G dW
+
+    where dW is the standard Wiener process, mu is a drift parameter, and sigma
+    is a scale parameter.
+
+    Parameters
+    ----------
+    increment_t: float
+        the amount of time by which the process increments
+    origin_x: float
+        the initial value of the process
+    drift: float
+        the drift parameter of the process (mu)
+    scale: float
+        the scale parameter of the process (sigma)
     """
-    brownian = brownian_motion(start_t, increment_t, 0., drift, scale)
+    brownian = brownian_motion(increment_t, 0., drift, scale)
     geometric = origin_x * np.exp(next(brownian))
     while True:
         yield geometric
-        geometric = np.exp(next(brownian))
+        geometric = origin_x * np.exp(next(brownian))
+
+
+# Asset class
 
 
 class Asset:
@@ -67,7 +116,7 @@ class Asset:
         self.__price     = None
         self.__momentum  = None
         self.__ema_var   = None
-        self.__bollinger = None
+        self.__bollinger = (None, None)
 
     @property
     def process(self) -> float:
@@ -97,7 +146,6 @@ class Asset:
         """
         return self.__bollinger
 
-
     def reset(self) -> None:
         """
         Resets the asset price, momentum, and volatility measures
@@ -125,53 +173,16 @@ class Asset:
 
         return self.price, self.momentum, self.bollinger
 
-
-
-class Portfolio:
-    """
-    """
-
-    def __init__(self, assets, weights, principal):
+    def __str__(self):
         """
+        String representation
         """
-        self.__assets    = assets
-        self.__weights   = weights
-        self.__principal = principal
+        return f"Asset(price=${0 if self.price is None else self.price:0.2f})"
 
-    @property
-    def assets(self):
-        return self.__assets
-
-    @property 
-    def weights(self):
-        return self.__weights
-
-    @weights.setter
-    def weights(self, new_weights):
-        self.__weights = new_weights
-
-    @property
-    def principal(self):
-        return self.__principal
-
-    @principal.setter
-    def principal(self, new_principal):
-        self.__principal = new_principal
-
-    @property
-    def value(self):
-        return self.principal * sum(asset.price * weight for asset, weight in zip(self.assets, self.weights))
-
-
-
-    def reset(self):
+    def __repr__(self):
         """
-        Resets each asset in the portfolio
+        String representation, technically more detailed but at the moment the
+        same as __str__
         """
-        for asset in self.assets:
-            asset.reset()
+        return self.__str__()
 
-    def one_step_return(self):
-        """
-        """
-        pass
