@@ -1,5 +1,6 @@
 import numpy as np
 from typing import Generator, Tuple
+import main.utils.moments as moments
 
 
 # Core generator methods  
@@ -107,16 +108,16 @@ class Asset:
         """
         """
         self.initial_price = initial_price
-        self.mean_return = mean_return
-        self.stdev_return = stdev_return
-        self.increment_t = increment_t
-        self.ema_decay = ema_decay
-        self.__process   = None  # possibly want to not initialize until self.reset() 
-                                 # is called explicitly by the user
-        self.__price     = None
-        self.__momentum  = None
-        self.__ema_var   = None
-        self.__bollinger = (None, None)
+        self.mean_return   = mean_return
+        self.stdev_return  = stdev_return
+        self.increment_t   = increment_t
+        self.ema_decay     = ema_decay  # ema == Exponential Moving Average
+        self.__process     = None  # possibly want to not initialize until self.reset() 
+                                   # is called explicitly by the user
+        self.__price       = None
+        self.__momentum    = None
+        self.__ema_var     = None
+        self.__bollinger   = (None, None)
 
     @property
     def process(self) -> float:
@@ -150,7 +151,7 @@ class Asset:
         """
         Resets the asset price, momentum, and volatility measures
         """
-        self.__process   = geometric_brownian_motion(0., self.increment_t,
+        self.__process   = geometric_brownian_motion(self.increment_t,
                                                      self.initial_price,
                                                      self.mean_return,
                                                      self.stdev_return)
@@ -171,7 +172,22 @@ class Asset:
         self.__ema_var  += (self.__price - old_momentum) * (self.__price - self.__momentum)
         self.__bollinger = tuple(self.__momentum + 2. * np.sqrt(self.__ema_var) * np.array([-1., 1.]))
 
-        return self.price, self.momentum, self.bollinger
+        return {
+            "price":     self.price,
+            "momentum":  self.momentum,
+            "bollinger": self.bollinger
+        }
+
+    def summarize(self):
+        """
+        Get a snapshot of the current state without updating the state at all.
+        """
+
+        return {
+            "price":     self.price,
+            "momentum":  self.momentum,
+            "bollinger": self.bollinger
+        }
 
     def __str__(self):
         """

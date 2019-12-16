@@ -1,3 +1,5 @@
+from collections import OrderedDict
+import numpy as np
 from typing import List, Tuple
 
 class Portfolio:
@@ -41,6 +43,9 @@ class Portfolio:
     def weights(self, new_weights: List[float]) -> None:
         self.__weights = new_weights
 
+    def __len__(self) -> int:
+        return len(self.__assets)
+
     def reset(self) -> float:
         """
         Resets each asset in the portfolio
@@ -56,4 +61,24 @@ class Portfolio:
         self.__value  = sum(num_shares * asset.price for num_shares, asset in zip(self.shares, self.assets))
         self.__shares = [weight * self.value / asset.price for asset, weight in zip(self.assets, self.weights)]
 
-        return self.value, self.assets, self.shares
+        return self.summary
+
+    @property
+    def summary(self):
+        """
+        Get a snapshot of the current state of the portfolio without updating
+        the state at all.
+        """
+        prices = np.array([asset.price for asset in self.assets])
+        momentum = np.array([asset.momentum for asset in self.assets])
+        bollinger = np.array([list(asset.bollinger) for asset in self.assets])
+
+        return OrderedDict({
+            "value": np.array([self.value]),
+            "shares": np.array(self.shares),
+            "assets": OrderedDict({
+                "price": prices,
+                "momentum": momentum,
+                "bollinger": bollinger,
+            }),
+        })
