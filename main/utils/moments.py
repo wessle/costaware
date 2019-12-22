@@ -52,3 +52,26 @@ def welford_estimator():
 
     return estimate
 
+
+class WelfordEstimator:
+    """Object version of the above function."""
+
+    def __init__(self):
+        self.__k = 0
+        self.__mean = 0.0
+        self.__unnorm_var = 0.0
+
+    def __call__(self, next_input):
+        self.__k += 1
+        old_mean = self.__mean
+        self.__mean += (next_input - old_mean) / self.__k
+        self.__unnorm_var += \
+            (next_input - old_mean) * (next_input - self.__mean)
+        try:
+            var = self.__unnorm_var / (self.__k - 1)
+        except ZeroDivisionError:
+            var = 0.0
+
+        return self.__mean, var
+
+

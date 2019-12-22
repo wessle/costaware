@@ -1,6 +1,4 @@
-# Absolute import
 import gym
-import main.utils.foo as foo
 import main.utils.moments as moments
 import numpy as np
 
