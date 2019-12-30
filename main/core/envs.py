@@ -1,5 +1,6 @@
 import gym
 import main.utils.moments as moments
+import main.utils.ecdf as ecdf
 import numpy as np
 
 from gym import spaces
@@ -50,21 +51,37 @@ class CostAwareEnv(gym.Env):
     def reward(self):
         """
         """
-        raise NotImplemented("Reward function must be implemented by subclasses.")
+        return self.__reward
 
     @property
     def cost(self):
         """
         """
-        raise NotImplemented("Cost function must be implemented by subclasses.")
+        return self.__cost
+
+    def __update_reward_and_cost(self, portfolio_returns):
+        raise NotImplemented("Implemented by subclasses.")
 
     def step(self, action):
-        """
-        
-        """
-        raise NotImplemented("step function must be implemented by subclasses.")
-        
+        assert self.action_space.contains(action), f"{action} ({type(action)}) invalid"
+
+        self.portfolio.weights = action
+
+        old_value = self.portfolio.value
+        self.state = self.portfolio.step()
+        new_value = self.portfolio.value
+
+        self.__update_reward_and_cost(
+            (new_value / old_value) - 1.
+        )
+
+        reward, cost = self.reward, self.cost
+
+        return self.state, (reward, cost), False, {}
+
     def reset(self):
+        self.__reward = 0.
+        self.__cost   = 0.
         self.portfolio.reset()
         self.state = self.portfolio.summary
 
@@ -76,32 +93,55 @@ class SharpeCostAwareEnv(CostAwareEnv):
         super().__init__(portfolio)
 
     def reset(self):
-        self.__reward = 0.
-        self.__cost   = 0.
         self.estimator = moments.welford_estimator()
         super().reset()
 
-    def step(self, action):
-        assert self.action_space.contains(action), f"{action} ({type(action)}) invalid"
+    def __update_reward_and_cost(self, portfolio_returns):
+        self.__reward, self.__cost = self.estimator(portfolio_returns)
 
-        self.portfolio.weights = action
 
-        old_value = self.portfolio.value
-        self.state = self.portfolio.step()
-        new_value = self.portfolio.value
+class OmegaCostAwareEnv(CostAwareEnv):
+    def __init__(self, portfolio, theta):
+        self.theta = theta
+        super().__init__(portfolio)
 
-        self.__reward, self.__cost = self.estimator(
-            (new_value / old_value) - 1.
+    def reset(self):
+        self.ecdf_estimator = ecdf.ECDFEstimator()
+        super().reset()
+
+    def __update_reward_and_cost(self, portfolio_returns):
+        cdf = self.ecdf_estimator(portfolio_returns)
+
+        # bounds for the integration
+        lower, upper = self.ecdf_estimator.lower, self.ecdf_estimator.upper
+        lower -= 1e-1
+        upper += 1e-1
+
+        # TODO worry about the case where lower > self.theta or upper <
+        # self.theta
+
+        left_tail = np.linspace(lower, self.theta)
+        right_tail = np.linspace(self.theta, upper)
+
+        self.__cost   = np.trapz(cdf(left_tail), left_tail)
+        self.__reward = np.trapz(1. - cdf(right_tail), right_tail)
+
+
+class SortinoCostAwareEnv(CostAwareEnv):
+    def __init__(self, portfolio, threshold):
+        self.threshold = threshold
+        super().__init__(portfolio)
+
+    def reset(self):
+        super().reset()
+
+    def __update_reward_and_cost(self, portfolio_returns):
+        cdf = self.ecdf_estimator(portfolio_returns)
+
+        self.__reward = portfolio_returns - self.threshold
+        self.__cost = np.sqrt(
+            np.sum(
+                (self.threshold - cdf.values) * (self.threshold - cdf.values)
+            ) / len(cdf)
         )
 
-        reward, cost = self.reward, self.cost
-
-        return self.state, (reward, cost), False, {}
-
-    @property
-    def reward(self):
-        return self.__reward
-
-    @property
-    def cost(self):
-        return self.__cost
