@@ -22,13 +22,13 @@ class ECDFEstimator:
 
     @property
     def values(self):
-        return self.__values
+        return np.array(self.__values)
 
     def __call__(self, next_value):
         self.__k += 1
         self.__values.append(next_value)
 
-        vectorized_values = np.array(values)
+        vectorized_values = np.array(self.values)
         self.__lower = np.min(vectorized_values)
         self.__upper = np.min(vectorized_values)
 
@@ -40,41 +40,7 @@ class ECDFEstimator:
             """
             nonlocal vectorized_values
 
-            return np.sum(vectorized_values <= x) / k
+            return np.sum(vectorized_values <= x) / self.__k
 
         return ecdf
-
-
-
-def ecdf_estimator() -> Callable[[float], Callable[[float], float]]:
-    """
-    This function creates an online empirical cumulative distribution function
-    which updates as new data is recorded.
-
-    Note: This is a very high-level function. It returns a function which takes
-    as input a float and returns a function which itself takes as input a float
-    and returns a float. In other words,
-
-    ecdf_estimator : () -> (float -> (float -> float))
-
-
-    """
-    k = 0
-    values = []
-
-    def estimator(next_value: float) -> Callable[[float], float]:
-        """
-        Each input refines the structure of the empirical cdf, which requires a
-        new Python function. Therefore, this estimator returns a new function
-        for each subsequent input.
-        """
-        nonlocal values, k
-
-        k += 1
-        values.append(next_value)
-                return ecdf 
-
-    return estimator
-
-
 

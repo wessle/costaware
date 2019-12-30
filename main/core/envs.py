@@ -59,8 +59,8 @@ class CostAwareEnv(gym.Env):
         """
         return self.__cost
 
-    def __update_reward_and_cost(self, portfolio_returns):
-        raise NotImplemented("Implemented by subclasses.")
+    def _update_reward_and_cost(self, portfolio_returns):
+        raise NotImplementedError("Implemented by subclasses.")
 
     def step(self, action):
         assert self.action_space.contains(action), f"{action} ({type(action)}) invalid"
@@ -71,7 +71,7 @@ class CostAwareEnv(gym.Env):
         self.state = self.portfolio.step()
         new_value = self.portfolio.value
 
-        self.__update_reward_and_cost(
+        self._update_reward_and_cost(
             (new_value / old_value) - 1.
         )
 
@@ -96,7 +96,7 @@ class SharpeCostAwareEnv(CostAwareEnv):
         self.estimator = moments.welford_estimator()
         super().reset()
 
-    def __update_reward_and_cost(self, portfolio_returns):
+    def _update_reward_and_cost(self, portfolio_returns):
         self.__reward, self.__cost = self.estimator(portfolio_returns)
 
 
@@ -109,7 +109,7 @@ class OmegaCostAwareEnv(CostAwareEnv):
         self.ecdf_estimator = ecdf.ECDFEstimator()
         super().reset()
 
-    def __update_reward_and_cost(self, portfolio_returns):
+    def _update_reward_and_cost(self, portfolio_returns):
         cdf = self.ecdf_estimator(portfolio_returns)
 
         # bounds for the integration
@@ -133,15 +133,16 @@ class SortinoCostAwareEnv(CostAwareEnv):
         super().__init__(portfolio)
 
     def reset(self):
+        self.ecdf_estimator = ecdf.ECDFEstimator()
         super().reset()
 
-    def __update_reward_and_cost(self, portfolio_returns):
+    def _update_reward_and_cost(self, portfolio_returns):
         cdf = self.ecdf_estimator(portfolio_returns)
+
+        returns_diff = self.threshold - self.ecdf_estimator.values
 
         self.__reward = portfolio_returns - self.threshold
         self.__cost = np.sqrt(
-            np.sum(
-                (self.threshold - cdf.values) * (self.threshold - cdf.values)
-            ) / len(cdf)
+            np.sum(returns_diff * returns_diff) / len(self.ecdf_estimator)
         )
 
