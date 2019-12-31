@@ -1,0 +1,168 @@
+\documentclass[12pt]{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{mathtools}
+
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\DD}{\mathcal{D}}
+\newcommand{\inv}{{}^{-1}}
+\renewcommand{\hat}{\widehat}
+\DeclarePairedDelimiter{\ip}{\langle}{\rangle}
+
+\title{%
+  The Sortino ratio and distributions
+}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+The \textbf{Sortino ratio} is defined by
+\begin{equation*}
+  S = \frac{R-T}{\textit{DR}},
+\end{equation*}
+where $R$ is the rate of return of an asset, $T$ is a threshold rate of return,
+and $\textit{DR}$ is the \textbf{downside variation} of the asset, defined by
+\begin{equation*}
+  \textit{DR} = \sqrt{
+    \int_{-\infty}^{T} (T-r)^2 \cdot f(r) \ dr
+  }.
+\end{equation*}
+Here, $f$ is the probability density function of the returns. The implicit
+assumption is that $f$ is integrable, which is a problem for our purposes.
+
+Instead, we only have the empirical cumulative distribution function. For the
+sequence of observed returns $R_1, R_2, R_3, \dots$, the $n$th update of the
+empirical \textsc{cdf} is given by
+\begin{equation*}
+  \hat{F}_n(x) = n\inv \sum_{k=1}^{n} H(x - R_k),
+\end{equation*}
+where
+\begin{equation*}
+  H(x) = 
+  \begin{cases}
+    0 & x < 0 \\
+    1 & x \geq 0
+  \end{cases}
+\end{equation*}
+is the standard Heaviside function. Unfortunately, $H$ is not differentiable, or
+even continuous, so $\hat{f}_n = \hat{F}_n'$ does not exist.
+
+\section{Distributions}
+
+Let $\DD \subset \RR^\RR$ be a suitably-chosen closed subspace of real
+functions. We will pin down exactly what constitutes the space once we
+understand the parameters of our problem. A \textbf{distribution} is an element
+of the dual space $\DD^*$ of linear functionals which are continuous with
+respect to a certain topology. Again, this topology will be determined later.
+For $G \in \DD^*$ and $g \in \DD$, we write $\ip{G, g}$ to denote the
+application $G(g)$. Some common distributions include
+\begin{itemize}
+  \item evaluation functionals: for $x_0 \in \RR$ let
+    $\delta_{x_0} \in \DD^*$ be defined by $\ip{\delta_{x_0}, g} = g(x_0)$.
+  \item integration functionals: for a suitably chosen function $\varphi$, let
+    $I_\varphi \in \DD^*$ be defined by $\ip{I_\varphi, g} = \int \varphi g$.
+\end{itemize}
+We can use integration by parts to motivate a special kind of
+\textbf{distributional derivative}, but this will depend on the specification of
+$\DD$.
+
+Let's examine the downside variation again. To expose the radicand, consider the
+term
+\begin{equation*}
+  \textit{DR}^2 = \int_{-\infty}^{T} (T-r)^2 \cdot f(r) \ dr.
+\end{equation*}
+The existence and integrability of the probability density function $f$ is the
+problem we are trying to fix. We want to turn $f$ into a suitable distribution,
+which means we will need to identify the correct space of functions $\DD$. The
+only function we know we \emph{need} to be in $\DD$ is $r \mapsto (T-r)^2$,
+which is a $C^{\infty}( (-\infty,  T])$ function. Let's run with $\DD =
+C^\infty( (-\infty, T] )$, and we can topologize it with the seminorms
+$\{\rho_n\}_{n = 1}^{\infty}$ defined by $\rho_n(g) = \| g^{(n)} \|_{u}$. Thus
+$g_k \to g$ in $\DD$ if and only if $g_k^{(n)} \to g^{(n)}$ uniformly for each
+$n$.
+
+With $\DD$ specified, we now need to worry about $\DD^*$, the space of
+continuous linear functionals on $\DD$. In order for a linear functional $\phi$
+on $\DD$ to be continuous, we will need the sequence $\ip{\phi, g_k}$ to
+converge to $\ip{\phi, g}$ for every converging sequence $g_k \to g$ in $\DD$.
+For the theory of distributions to be of use to us, then, we need to verify that
+the Heaviside functions can be viewed as elements in $\DD^*$ and confirm that
+their distributional derivatives are also elements in $\DD^*$.
+
+The Heaviside ``distribution'' $H$ is the functional that operates on
+$\DD$ like $\ip{H, g} = \int_0^T g(r) \ dr$. This is because, in the
+\emph{function} sense, integration against a Heaviside function yields the
+following equality:
+\begin{equation*}
+  \int_{-\infty}^T g(r) \cdot H(r) \ dr = \int_0^T  g(r) \ dr.
+\end{equation*}
+Introduce the shift notation $\ip{H_{x_0}, g} = \int_{x_0}^T g(r) \ dr$. This
+again is designed to match the integration intuition:
+\begin{equation*}
+  \int_{-\infty}^T g(r) \cdot H(r-x_0) \ dr = \int_{x_0}^T g(r) \ dr.
+\end{equation*}
+The set of Heaviside functions $\{H_{x_0}\}_{x_0 \in \RR}$ is important for our
+purposes because the empirical cumulative distribution function $\hat{F}_n$ is a
+linear combination of Heavisides. We therefore need to verify that all Heaviside
+functions reside as distributions in $\DD^*$. By appealing to a continuity
+argument, it will suffice to check that the canonical Heaviside $H = H_0$ is a
+distribution in $\DD^*$. To this end, it is clear that $H$ is linear. To check
+that $H$ is continuous, suppose $g_k \to g$ in $\DD$. On the interval $[0,T]$,
+each $g_k$ is bounded; moreover, since $g_k$ converges to $g$ uniformly, all but
+finitely many $g_k$ are bounded above by the function $g+1$. The dominated
+convergence theorem therefore implies that $\int_0^T g_{k}(x) \ dx \to \int_0^T
+g(x) \ dx$, so $\ip{H, g_k} \to \ip{H, g}$. This means that $H$ is continuous as
+a distribution, and so $H \in \DD^*$.
+
+Since $\DD^*$ is a vector space, and since $H_{x_0} \in \DD^*$ for each $x_0 \in
+\RR$, it follows that every empirical cumulative distribution function
+$\hat{F}_n$ is in $\DD^*$, being a linear combination of Heavisides. The
+remaining question is whether the distributional derivative of $\hat{F}_n$
+resides in $\DD^*$. To this end, it again suffices to verify that $H' \in D^*$,
+since the rest will follow by a continuity argument. By integration by parts, we
+have the identity
+\begin{align*}
+  \int_{-\infty}^T g(r) \cdot H'(r) \ dr &= g(r) \cdot H(r) \bigg|_{-\infty}^{T}
+  - \int_{-\infty}^{T} g'(r) \cdot H(r) \ dr \\
+  &= g(T) \cdot H(T) - \int_0^T g'(r) \ dr \\
+  &= g(T) \cdot H(T) - (g(T) - g(0)) \\
+  &= g(T) \cdot (H(T) - 1) + g(0),
+\end{align*}
+so we should define $H_{x_0}'$ to be the distribution $\ip{H_{x_0}', g} = g(T)
+\cdot (H(T-x_0) - 1) + g(x_0)$. It is not hard to show that $H_{x_0}'$, so
+defined, resides  in $\DD^*$. 
+
+\section{Conclusion}
+
+We can now evaluate $\hat{F}_{n}'$. In particular, we have
+\begin{align*}
+  \ip{\hat{F}_n', g} &= n\inv \sum_{k=1}^{n} \ip{H_{R_k}', g} \\
+  &= n\inv \sum_{k=1}^{n} \left[ 
+    g(T) \cdot (H(T-R_k) - 1) + g(R_k)
+  \right] \\
+  &= n\inv \cdot g(T) \sum_{k=1}^{n} \left[ 
+    H(T-R_k) - 1 
+  \right] 
+  + n\inv \sum_{k=1}^{n} g(R_k).
+\end{align*}
+This is the evaluation on an arbitrary $g \in \DD$. For the specific function
+$g(r) = (T-r)^2$ in the Sortino ratio, this becomes
+\begin{equation*}
+  \ip{\hat{F}_n', g} = n\inv \sum_{k=1}^{n} (T-R_k)^2
+\end{equation*}
+since $g(T) = 0$.  The $n$th estimate of the Sortino ratio is, therefore, given
+by
+\begin{equation*}
+  \widehat{S}_n = \frac{R_n - T}{\hat{\textit{DR}}_n} = 
+  \frac{R_n - T}{\sqrt{n\inv \sum_{k=1}^{n} (T-R_k)^2}}.
+\end{equation*}
+Interestingly, and perhaps coincidentally, the computation of $\ip{\hat{F}_n',
+g}$ corresponds to the uniform Monte Carlo sampling estimate of the original
+integral.
+
+\end{document}
