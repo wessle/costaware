@@ -54,7 +54,7 @@ def welford_estimator():
 
 
 class WelfordEstimator:
-    """Object version of the above function."""
+    """Object-oriented version of the above function."""
 
     def __init__(self):
         self.__k = 0
