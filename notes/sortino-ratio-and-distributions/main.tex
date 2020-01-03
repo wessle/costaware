@@ -4,12 +4,18 @@
 \usepackage{amssymb}
 \usepackage{amsthm}
 \usepackage{mathtools}
+\usepackage[margin=1.25in]{geometry}
 
 \newcommand{\RR}{\mathbb{R}}
+\newcommand{\NN}{\mathbb{N}}
 \newcommand{\DD}{\mathcal{D}}
 \newcommand{\inv}{{}^{-1}}
+\newcommand{\one}[1]{\mathbb{1}_{#1}}
 \renewcommand{\hat}{\widehat}
 \DeclarePairedDelimiter{\ip}{\langle}{\rangle}
+\DeclarePairedDelimiter{\norm}{\|}{\|}
+\DeclarePairedDelimiter{\abs}{|}{|}
+\DeclarePairedDelimiter{\set}{\{}{\}}
 
 \title{%
   The Sortino ratio and distributions
@@ -62,8 +68,8 @@ respect to a certain topology. Again, this topology will be determined later.
 For $G \in \DD^*$ and $g \in \DD$, we write $\ip{G, g}$ to denote the
 application $G(g)$. Some common distributions include
 \begin{itemize}
-  \item evaluation functionals: for $x_0 \in \RR$ let
-    $\delta_{x_0} \in \DD^*$ be defined by $\ip{\delta_{x_0}, g} = g(x_0)$.
+  \item evaluation functionals: for $r_0 \in \RR$ let
+    $\delta_{r_0} \in \DD^*$ be defined by $\ip{\delta_{r_0}, g} = g(r_0)$.
   \item integration functionals: for a suitably chosen function $\varphi$, let
     $I_\varphi \in \DD^*$ be defined by $\ip{I_\varphi, g} = \int \varphi g$.
 \end{itemize}
@@ -76,66 +82,89 @@ term
 \begin{equation*}
   \textit{DR}^2 = \int_{-\infty}^{T} (T-r)^2 \cdot f(r) \ dr.
 \end{equation*}
+
 The existence and integrability of the probability density function $f$ is the
 problem we are trying to fix. We want to turn $f$ into a suitable distribution,
 which means we will need to identify the correct space of functions $\DD$. The
 only function we know we \emph{need} to be in $\DD$ is $r \mapsto (T-r)^2$,
-which is a $C^{\infty}( (-\infty,  T])$ function. Let's run with $\DD =
-C^\infty( (-\infty, T] )$, and we can topologize it with the seminorms
-$\{\rho_n\}_{n = 1}^{\infty}$ defined by $\rho_n(g) = \| g^{(n)} \|_{u}$. Thus
-$g_k \to g$ in $\DD$ if and only if $g_k^{(n)} \to g^{(n)}$ uniformly for each
-$n$.
+which is a $C^{\infty}( (-\infty,  T])$ function. On the other hand, $r \mapsto
+(T-r)^2$ doesn't have the right asymptotic properties on which to assign a
+topology of uniform convergence directly. This can be resolved by introducing a
+weight function $w(r) = (T-r)^{-2}+1$ and by defining $\DD$ to be the subspace of
+$C^{\infty}((-\infty, T])$ given by
+\begin{equation*}
+  \DD = \set{
+    g \in C^{\infty}( (-\infty, T]) : 
+    \text{
+      $\norm{g^{(n)}}_{w} < \infty$ for all $n \in \NN$%
+    }
+  },
+\end{equation*}
+where
+\begin{equation*}
+  \norm{g}_w = \sup_{r \in \RR} \set{((T-r)^{-2}+1) \abs{g(r)}}.
+\end{equation*}
+Clearly, $r \mapsto (T-r)^2$ is a member of $\DD$, and there is a natural choice
+of topology with the seminorms $\set{\rho_n}_{n = 1}^{\infty}$ defined by
+$\rho_n(g) = \norm{g^{(n)}}_w$. Thus $g_k \to g$ in $\DD$ if and only if
+$w \cdot g_k^{(n)} \to w\cdot g^{(n)}$ uniformly for each $n$. This, in turn,
+implies that $g_k^{(n)} \to g^{(n)}$ uniformly on compact sets for each $n$.
 
 With $\DD$ specified, we now need to worry about $\DD^*$, the space of
-continuous linear functionals on $\DD$. In order for a linear functional $\phi$
-on $\DD$ to be continuous, we will need the sequence $\ip{\phi, g_k}$ to
-converge to $\ip{\phi, g}$ for every converging sequence $g_k \to g$ in $\DD$.
+continuous linear functionals on $\DD$. In order for a linear functional $D$
+on $\DD$ to be continuous, we will need the sequence $\ip{D, g_k}$ to
+converge to $\ip{D, g}$ for every converging sequence $g_k \to g$ in $\DD$.
 For the theory of distributions to be of use to us, then, we need to verify that
 the Heaviside functions can be viewed as elements in $\DD^*$ and confirm that
 their distributional derivatives are also elements in $\DD^*$.
 
-The Heaviside ``distribution'' $H$ is the functional that operates on
-$\DD$ like $\ip{H, g} = \int_0^T g(r) \ dr$. This is because, in the
-\emph{function} sense, integration against a Heaviside function yields the
-following equality:
+Define the Heaviside functional $H_{r_0}$ by
 \begin{equation*}
-  \int_{-\infty}^T g(r) \cdot H(r) \ dr = \int_0^T  g(r) \ dr.
+  \ip{H_{r_0}, g} = H(T-r_0) \int_{r_0}^{T} g(r) \ dr.
 \end{equation*}
-Introduce the shift notation $\ip{H_{x_0}, g} = \int_{x_0}^T g(r) \ dr$. This
-again is designed to match the integration intuition:
-\begin{equation*}
-  \int_{-\infty}^T g(r) \cdot H(r-x_0) \ dr = \int_{x_0}^T g(r) \ dr.
-\end{equation*}
-The set of Heaviside functions $\{H_{x_0}\}_{x_0 \in \RR}$ is important for our
-purposes because the empirical cumulative distribution function $\hat{F}_n$ is a
-linear combination of Heavisides. We therefore need to verify that all Heaviside
-functions reside as distributions in $\DD^*$. By appealing to a continuity
-argument, it will suffice to check that the canonical Heaviside $H = H_0$ is a
-distribution in $\DD^*$. To this end, it is clear that $H$ is linear. To check
-that $H$ is continuous, suppose $g_k \to g$ in $\DD$. On the interval $[0,T]$,
-each $g_k$ is bounded; moreover, since $g_k$ converges to $g$ uniformly, all but
-finitely many $g_k$ are bounded above by the function $g+1$. The dominated
-convergence theorem therefore implies that $\int_0^T g_{k}(x) \ dx \to \int_0^T
-g(x) \ dx$, so $\ip{H, g_k} \to \ip{H, g}$. This means that $H$ is continuous as
-a distribution, and so $H \in \DD^*$.
-
-Since $\DD^*$ is a vector space, and since $H_{x_0} \in \DD^*$ for each $x_0 \in
-\RR$, it follows that every empirical cumulative distribution function
-$\hat{F}_n$ is in $\DD^*$, being a linear combination of Heavisides. The
-remaining question is whether the distributional derivative of $\hat{F}_n$
-resides in $\DD^*$. To this end, it again suffices to verify that $H' \in D^*$,
-since the rest will follow by a continuity argument. By integration by parts, we
-have the identity
+The term $H(T-r_0)$ is 1 if $r_0 \leq T$ and $0$ otherwise. This ensures that
+the Heaviside functional is appropriately $0$ when the center $r_0$ is to the
+right of $T$. We first verify that $H_{r_0}$ is linear, then verify its
+continuity. Indeed, 
 \begin{align*}
-  \int_{-\infty}^T g(r) \cdot H'(r) \ dr &= g(r) \cdot H(r) \bigg|_{-\infty}^{T}
-  - \int_{-\infty}^{T} g'(r) \cdot H(r) \ dr \\
-  &= g(T) \cdot H(T) - \int_0^T g'(r) \ dr \\
-  &= g(T) \cdot H(T) - (g(T) - g(0)) \\
-  &= g(T) \cdot (H(T) - 1) + g(0),
+  \ip{H_{r_0}, c_1 g_1 + c_2 g_2} &= H(T - r_0) \cdot \int_0^T c_1 g_1(r)
+  + c_2 g_2(r) \ dr \\
+  &= c_1 H(T - r_0) \int_{r_0}^{T} g_1(r) \ dr + 
+     c_2 H(T - r_0) \int_{r_0}^{T} g_2(r) \ dr \\
+  &= c_1 \ip{H_{r_0}, g_1} + c_2 \ip{H_{r_0}, g_2},
 \end{align*}
-so we should define $H_{x_0}'$ to be the distribution $\ip{H_{x_0}', g} = g(T)
-\cdot (H(T-x_0) - 1) + g(x_0)$. It is not hard to show that $H_{x_0}'$, so
-defined, resides  in $\DD^*$. 
+establishing linearity. Moreover, if $g_{k} \to g$ in $\DD$, then $g_k \to g$
+uniformly on $[r_0, T]$. Therefore, all but finitely many $g_k$ are bounded
+above by $g+1$; hence, $\int_{r_0}^T g_k \to \int_{r_0}^T g$ by the dominated
+convergence theorem. This implies that $H_{r_0}$ is a continuous function.
+Therefore, $H \in \DD^*$.
+
+Since $\DD^*$ is a vector space, and since $H_{r_0} \in \DD^*$ for each $r_0 \in
+\RR$, it follows that every empirical \textsc{cdf}
+\begin{equation*}
+  \hat{F}_n = n\inv \sum_{k=1}^{n} H_{R_k}
+\end{equation*}
+is in $\DD^*$, being a linear combination of Heavisides. The
+remaining question is whether the distributional derivative of $\hat{F}_n$
+resides in $\DD^*$. It suffices to consider whether $H_{R_0}' \in \DD^*$. We
+needs first agree to a suitable \emph{notion} of differentiation. Imagining a
+successful application of integration by parts with suitable functions, we would
+expect that
+\begin{align*}
+  \int_{-\infty}^T g(r) \cdot H'(r-r_0) \ dr 
+  &= g(r) \cdot H(r-r_0)
+  \bigg|_{-\infty}^{T} - \int_{-\infty}^{T} g'(r) \cdot H(r-r_0) \ dr \\
+  &= g(T) \cdot H(T-r_0) - \int_{r_0}^T g'(r) \ dr \\
+  &= g(T) \cdot H(T-r_0) - (g(T) - g(r_0)) \\
+  &= g(T) \cdot [H(T-r_0) - 1] + g(r_0).
+\end{align*}
+For consistency, we \emph{define} $H_{r_0}'$ by
+\begin{equation*}
+  \ip{H_{r_0}', g} =  H(T-r_0)\cdot [H(T-r_0) - 1]\cdot g(T)  + H(T-r_0) \cdot
+  g(r_0).
+\end{equation*}
+It is clear that $H_{r_0}'$ is linear and continuous, so $H_{r_0}' \in \DD^*$.
+Therefore $\hat{F}_n' \in \DD^*$ for each $n \in \NN$.
 
 \section{Conclusion}
 
@@ -143,23 +172,24 @@ We can now evaluate $\hat{F}_{n}'$. In particular, we have
 \begin{align*}
   \ip{\hat{F}_n', g} &= n\inv \sum_{k=1}^{n} \ip{H_{R_k}', g} \\
   &= n\inv \sum_{k=1}^{n} \left[ 
-    g(T) \cdot (H(T-R_k) - 1) + g(R_k)
+    H(T-R_k)\cdot [H(T-R_k) - 1]\cdot g(T)  + H(T-R_k) \cdot
+    g(R_k)
   \right] \\
-  &= n\inv \cdot g(T) \sum_{k=1}^{n} \left[ 
+  &= n\inv \cdot g(T) \sum_{k=1}^{n} H(T-R_k) \cdot \left[ 
     H(T-R_k) - 1 
   \right] 
-  + n\inv \sum_{k=1}^{n} g(R_k).
+  + n\inv \sum_{k=1}^{n} H(T-R_k) \cdot g(R_k).
 \end{align*}
 This is the evaluation on an arbitrary $g \in \DD$. For the specific function
 $g(r) = (T-r)^2$ in the Sortino ratio, this becomes
 \begin{equation*}
-  \ip{\hat{F}_n', g} = n\inv \sum_{k=1}^{n} (T-R_k)^2
+  \ip{\hat{F}_n', g} = n\inv \sum_{k=1}^{n} H(T-R_k) \cdot (T-R_k)^2
 \end{equation*}
 since $g(T) = 0$.  The $n$th estimate of the Sortino ratio is, therefore, given
 by
 \begin{equation*}
   \widehat{S}_n = \frac{R_n - T}{\hat{\textit{DR}}_n} = 
-  \frac{R_n - T}{\sqrt{n\inv \sum_{k=1}^{n} (T-R_k)^2}}.
+  \frac{R_n - T}{\sqrt{n\inv \sum_{k=1}^{n} H(T-R_k) \cdot (T-R_k)^2}}.
 \end{equation*}
 Interestingly, and perhaps coincidentally, the computation of $\ip{\hat{F}_n',
 g}$ corresponds to the uniform Monte Carlo sampling estimate of the original

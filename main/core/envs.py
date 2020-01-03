@@ -120,8 +120,8 @@ class OmegaCostAwareEnv(CostAwareEnv):
         # TODO worry about the case where lower > self.theta or upper <
         # self.theta
 
-        left_tail = np.linspace(lower, self.theta)
-        right_tail = np.linspace(self.theta, upper)
+        left_tail = np.linspace(lower, self.theta) if lower < self.theta else np.zeros(1)
+        right_tail = np.linspace(self.theta, upper) if upper > self.theta else np.zeros(1)
 
         self.__cost   = np.trapz(cdf(left_tail), left_tail)
         self.__reward = np.trapz(1. - cdf(right_tail), right_tail)
@@ -139,7 +139,10 @@ class SortinoCostAwareEnv(CostAwareEnv):
     def _update_reward_and_cost(self, portfolio_returns):
         cdf = self.ecdf_estimator(portfolio_returns)
 
-        returns_diff = self.threshold - self.ecdf_estimator.values
+        # only count the returns which are less than the threshold in this
+        # computation.
+        returns_diff = (self.threshold - self.ecdf_estimator.values) *\
+            (self.ecdf_estimator.values <= self.threshold)
 
         self.__reward = portfolio_returns - self.threshold
         self.__cost = np.sqrt(
