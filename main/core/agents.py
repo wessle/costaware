@@ -6,8 +6,7 @@ import main.utils.utils as utils
 
 
 class RLAgent:
-    """Base class for agents corresponding to specific RL algorithms.
-    """
+    """Base class for agents corresponding to specific RL algorithms."""
 
     def __init__(self):
         raise NotImplemented("__init__ not implemented.")
@@ -132,7 +131,7 @@ class RVIQLearningBasedAgent(RLAgent):
                     utils.arrays_to_tensors(self.buffer.sample_batch(self.N),
                                             self.device)
 
-            # assemble pieces for the Q update})
+            # assemble pieces for the Q update
             with torch.no_grad():
                 proxy_rewards = rewards - self.rho * costs
                 average_reward = torch.mean(proxy_rewards) * torch.ones(self.N)
@@ -154,8 +153,9 @@ class RVIQLearningBasedAgent(RLAgent):
             # perform the rho update
             rho_clip_radius = np.inf if self.rho_clip_radius is None \
                     else self.rho_clip_radius
-            self.rho += min(rho_clip_radius,
-                            self.rho_lr * np.average(state_values))
+            average = np.average(state_values)
+            self.rho += np.sign(average) * min(rho_clip_radius,
+                            self.rho_lr * abs(average))
 
     def save_models(self, filename):
         """Save Q function and optimizer."""
