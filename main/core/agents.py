@@ -34,12 +34,6 @@ class RLAgent:
     def load_models(self):
         raise NotImplemented("load_models not implemented.")
 
-    def save_checkpoint(self):
-        raise NotImplemented("save_checkpoint not implemented.")
-
-    def load_checkpoint(self):
-        raise NotImplemented("load_checkpoint not implemented.")
-
 
 class RVIQLearningBasedAgent(RLAgent):
     """
@@ -54,8 +48,8 @@ class RVIQLearningBasedAgent(RLAgent):
     def __init__(self, buffer_maxlen, batchsize, actions,
                  q_network, q_lr, rho_lr,
                  eps=0.01, enable_cuda=True, optimizer=torch.optim.Adam,
-                 clip_grad_radius=None, rho_init=0.0, rho_update_radius=1.0):
-        
+                 grad_clip_radius=None, rho_init=0.0, rho_update_radius=1.0):
+
         self.buffer = utils.Buffer(buffer_maxlen)
         self.N = batchsize
         self.actions = actions # numpy array of actions
@@ -70,18 +64,15 @@ class RVIQLearningBasedAgent(RLAgent):
 
         self.q_optim = optimizer(self.q.parameters(), lr=q_lr)
         self.rho_lr = rho_lr
-        self.clip_grad_radius = clip_grad_radius
+        self.grad_clip_radius = grad_clip_radius
         self.rho = rho_init
         self.rho_update_radius = rho_update_radius
 
         self.state = None
         self.action = None
 
-        # vector version of the self.state_value funtion
-        self.state_values = np.vectorize(self.state_value)
-
     def action_values(self, state):
-        """Return list of action values for curren) state."""
+        """Return list of action values for current state."""
 
         with torch.no_grad():
             state = utils.array_to_tensor(state, self.device)
@@ -94,6 +85,11 @@ class RVIQLearningBasedAgent(RLAgent):
         """Return value estimate of the current state."""
 
         return max(self.action_values(state))
+
+    def state_values(self, states):
+        """Return value estimates of an array of states."""
+
+        return [self.state_value(state) for state in states]
 
     def sample_action(self, state):
         """
@@ -137,11 +133,10 @@ class RVIQLearningBasedAgent(RLAgent):
                     utils.arrays_to_tensors(self.buffer.sample_batch(self.N),
                                             self.device)
 
-            # assemble pieces for the Q update
+            # assemble pieces for the Q update})
             with torch.no_grad():
                 proxy_rewards = rewards - self.rho * costs
                 average_reward = torch.mean(proxy_rewards) * torch.ones(self.N)
-                # TODO: debug the following call to utils.array_to_tensor
                 state_values = utils.array_to_tensor(self.state_values(states),
                                                      self.device)
                 q_targets = proxy_rewards - average_reward + state_values
@@ -149,7 +144,7 @@ class RVIQLearningBasedAgent(RLAgent):
             # form the loss function and take a gradient step
             q_inputs = torch.cat([states, actions], dim=1)
             q_estimates = self.q(q_inputs)
-            loss = self.q_loss(q_inputs, q_estimates)
+            loss = self.q_loss(q_targets.unsqueeze(dim=1), q_estimates)
             self.q_optim.zero_grad()
             loss.backward()
             if self.grad_clip_radius is not None:
@@ -161,7 +156,29 @@ class RVIQLearningBasedAgent(RLAgent):
             self.rho += max(self.rho_update_radius,
                             self.rho_lr * np.average(state_values))
 
+    def save_models(self, filename):
+        """Save Q function and optimizer."""
 
+        torch.save({
+                'using_cuda': self.__enable_cuda,
+                'q_state_dict': self.q.state_dict(),
+                'q_optim_state_dict': self.q_optim.state_dict(),
+        }, filename)
+
+    def load_models(self, filename, continue_training=True):
+        """Load Q function and optimizer."""
+        
+        model = torch.load(filename)
+
+        self.__enable_cuda = model['using_cuda']
+        self.q.load_state_dict(model['q_state_dict'])
+        self.q_optim.load_state_dict(model['q_optim_state_dict'])
+        
+        self.q.train() if continue_training \
+            else self.q.eval()
+
+        self.enable_cuda(self.__enable_cuda, warn=False)
+        
 
 
 
