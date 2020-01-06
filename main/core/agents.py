@@ -2,7 +2,6 @@ import numpy as np
 import torch
 import warnings
 
-
 import main.utils.utils as utils
 
 
@@ -48,7 +47,7 @@ class RVIQLearningBasedAgent(RLAgent):
     def __init__(self, buffer_maxlen, batchsize, actions,
                  q_network, q_lr, rho_lr,
                  eps=0.01, enable_cuda=True, optimizer=torch.optim.Adam,
-                 grad_clip_radius=None, rho_init=0.0, rho_update_radius=1.0):
+                 grad_clip_radius=None, rho_init=0.0, rho_clip_radius=None):
 
         self.buffer = utils.Buffer(buffer_maxlen)
         self.N = batchsize
@@ -66,7 +65,7 @@ class RVIQLearningBasedAgent(RLAgent):
         self.rho_lr = rho_lr
         self.grad_clip_radius = grad_clip_radius
         self.rho = rho_init
-        self.rho_update_radius = rho_update_radius
+        self.rho_clip_radius = rho_clip_radius
 
         self.state = None
         self.action = None
@@ -153,7 +152,9 @@ class RVIQLearningBasedAgent(RLAgent):
             self.q_optim.step()
 
             # perform the rho update
-            self.rho += max(self.rho_update_radius,
+            rho_clip_radius = np.inf if self.rho_clip_radius is None \
+                    else self.rho_clip_radius
+            self.rho += min(rho_clip_radius,
                             self.rho_lr * np.average(state_values))
 
     def save_models(self, filename):
