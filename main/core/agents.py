@@ -153,27 +153,29 @@ class RVIQLearningBasedAgent(RLAgent):
             # perform the rho update
             rho_clip_radius = np.inf if self.rho_clip_radius is None \
                     else self.rho_clip_radius
-            average = np.average(state_values)
-            self.rho += np.sign(average) * min(rho_clip_radius,
-                            self.rho_lr * abs(average))
+            average_state_value = np.average(state_values)
+            self.rho += np.sign(average_state_value) * min(rho_clip_radius,
+                            self.rho_lr * abs(average_state_value))
 
     def save_models(self, filename):
-        """Save Q function and optimizer."""
+        """Save Q function, optimizer, rho estimate."""
 
         torch.save({
                 'using_cuda': self.__enable_cuda,
                 'q_state_dict': self.q.state_dict(),
                 'q_optim_state_dict': self.q_optim.state_dict(),
+                'rho': self.rho,
         }, filename)
 
     def load_models(self, filename, continue_training=True):
-        """Load Q function and optimizer."""
+        """Load Q function, optimizer, rho estimate."""
         
         model = torch.load(filename)
 
         self.__enable_cuda = model['using_cuda']
         self.q.load_state_dict(model['q_state_dict'])
         self.q_optim.load_state_dict(model['q_optim_state_dict'])
+        self.rho = model['rho']
         
         self.q.train() if continue_training \
             else self.q.eval()
