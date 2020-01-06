@@ -17,5 +17,8 @@ Add new dependencies by editing the `install_requires` field in setup.py, then d
 - [ ] Write unit tests for `Portfolio` class
 - [ ] Implement OpenAI Gym `env` subclass for financial simulation
 - [ ] Write tests for environment
+- [ ] Implement `get_actions` method for `AllocationSimplex`
 - [X] Implement Q-learning agent
 - [ ] Write tests for Q-learning agent
+- [ ] Implement AC agent
+- [ ] Write tests for AC agent
