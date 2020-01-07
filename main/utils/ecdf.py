@@ -28,9 +28,9 @@ class ECDFEstimator:
         self.__k += 1
         self.__values.append(next_value)
 
-        vectorized_values = np.array(self.values)
+        vectorized_values = np.array(self.__values)
         self.__lower = np.min(vectorized_values)
-        self.__upper = np.min(vectorized_values)
+        self.__upper = np.max(vectorized_values)
 
         @np.vectorize
         def ecdf(x: float) -> float:

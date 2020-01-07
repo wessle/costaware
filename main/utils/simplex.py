@@ -76,7 +76,3 @@ def generate_simplex(dimension: int, steps: int) -> 'np.ndarray':
 
 
     return np.array(kernel(steps, dimension-1)) / steps
-
-print(
-    generate_simplex(3, 3)
-)
