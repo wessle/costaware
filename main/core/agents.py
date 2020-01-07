@@ -2,13 +2,11 @@ import numpy as np
 import torch
 import warnings
 
-
 import main.utils.utils as utils
 
 
 class RLAgent:
-    """Base class for agents corresponding to specific RL algorithms.
-    """
+    """Base class for agents corresponding to specific RL algorithms."""
 
     def __init__(self):
         raise NotImplemented("__init__ not implemented.")
@@ -48,7 +46,7 @@ class RVIQLearningBasedAgent(RLAgent):
     def __init__(self, buffer_maxlen, batchsize, actions,
                  q_network, q_lr, rho_lr,
                  eps=0.01, enable_cuda=True, optimizer=torch.optim.Adam,
-                 grad_clip_radius=None, rho_init=0.0, rho_update_radius=1.0):
+                 grad_clip_radius=None, rho_init=0.0, rho_clip_radius=None):
 
         self.buffer = utils.Buffer(buffer_maxlen)
         self.N = batchsize
@@ -66,7 +64,7 @@ class RVIQLearningBasedAgent(RLAgent):
         self.rho_lr = rho_lr
         self.grad_clip_radius = grad_clip_radius
         self.rho = rho_init
-        self.rho_update_radius = rho_update_radius
+        self.rho_clip_radius = rho_clip_radius
 
         self.state = None
         self.action = None
@@ -133,7 +131,7 @@ class RVIQLearningBasedAgent(RLAgent):
                     utils.arrays_to_tensors(self.buffer.sample_batch(self.N),
                                             self.device)
 
-            # assemble pieces for the Q update})
+            # assemble pieces for the Q update
             with torch.no_grad():
                 proxy_rewards = rewards - self.rho * costs
                 average_reward = torch.mean(proxy_rewards) * torch.ones(self.N)
@@ -153,26 +151,31 @@ class RVIQLearningBasedAgent(RLAgent):
             self.q_optim.step()
 
             # perform the rho update
-            self.rho += max(self.rho_update_radius,
-                            self.rho_lr * np.average(state_values))
+            rho_clip_radius = np.inf if self.rho_clip_radius is None \
+                    else self.rho_clip_radius
+            average_state_value = np.average(state_values)
+            self.rho += np.sign(average_state_value) * min(rho_clip_radius,
+                            self.rho_lr * abs(average_state_value))
 
     def save_models(self, filename):
-        """Save Q function and optimizer."""
+        """Save Q function, optimizer, rho estimate."""
 
         torch.save({
                 'using_cuda': self.__enable_cuda,
                 'q_state_dict': self.q.state_dict(),
                 'q_optim_state_dict': self.q_optim.state_dict(),
+                'rho': self.rho,
         }, filename)
 
     def load_models(self, filename, continue_training=True):
-        """Load Q function and optimizer."""
+        """Load Q function, optimizer, rho estimate."""
         
         model = torch.load(filename)
 
         self.__enable_cuda = model['using_cuda']
         self.q.load_state_dict(model['q_state_dict'])
         self.q_optim.load_state_dict(model['q_optim_state_dict'])
+        self.rho = model['rho']
         
         self.q.train() if continue_training \
             else self.q.eval()
