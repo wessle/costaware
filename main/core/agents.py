@@ -1,5 +1,7 @@
 import numpy as np
 import torch
+import torch.nn.functional as F
+import copy
 import warnings
 
 import main.utils.utils as utils
@@ -40,8 +42,6 @@ class RVIQLearningBasedAgent(RLAgent):
 
     Note that the set of actions must be finite.
     """
-
-    # TODO: which attributes and methods should be private?
 
     def __init__(self, buffer_maxlen, batchsize, actions,
                  q_network, q_lr, rho_lr,
@@ -183,6 +183,151 @@ class RVIQLearningBasedAgent(RLAgent):
         self.enable_cuda(self.__enable_cuda, warn=False)
         
 
+class ACAgent(RLAgent):
+    """
+    Actor-critic RL agent for maximizing long-run average
+    reward over long-run average cost.
+    """
+
+    def __init__(self, buffer_maxlen, batchsize,
+                 policy_network, v_network,
+                 policy_lr, v_lr,
+                 enable_cuda=True,
+                 policy_optimizer=torch.optim.Adam,
+                 v_optimizer=torch.optim.Adam,
+                 grad_clip_radius=None):
+
+        self.buffer = utils.Buffer(buffer_maxlen)
+        self.N = batchsize
+        self.pi = policy_network
+        self.pi_optim = policy_optimizer(self.pi.parameters(), lr=policy_lr)
+        self.rv = v_network
+        self.rv_optim = v_optimizer(self.rv.parameters(), lr=v_lr)
+        self.rv_loss = torch.nn.MSELoss()
+        self.cv = copy.deepcopy(self.rv)
+        self.cv_optim = v_optimizer(self.cv.parameters(), lr=v_lr)
+        self.cv_loss = torch.nn.MSELoss()
+
+        self.__enable_cuda = enable_cuda
+        self.enable_cuda(self.__enable_cuda, warn=False)
+        # NOTE: self.device is defined when self.enable_cuda is called
+
+        self.state = None
+        self.action = None
+
+    def sample_action(self, state):
+        """
+        Sample an action using the current policy.
+        
+        An action must be sampled before self.update can be called.
+        """
+
+        self.state = state
+        state = utils.array_to_tensor(state, self.device)
+        self.action = self.pi.sample(
+            state, no_log_prob=True).cpu().detach().numpy()
+        return self.action
+
+    def enable_cuda(self, enable_cuda=True, warn=True):
+        """Enable or disable cuda and update models."""
+        
+        if warn:
+            warnings.warn("Converting models between 'cpu' and 'cuda' after "
+                          "initializing optimizers can give errors when using "
+                          "optimizers other than SGD or Adam!")
+        
+        self.__enable_cuda = enable_cuda
+        self.device = torch.device(
+                'cuda' if torch.cuda.is_available() and self.__enable_cuda \
+                else 'cpu')
+        self.pi.to(self.device)
+        self.rv.to(self.device)
+        self.cv.to(self.device)
+
+    def update(self, reward_cost_tuple, next_state):
+        """Perform the update step."""
+
+        assert self.state is not None, "sample_action must be called first"
+
+        new_sample = (self.state, self.action, reward_cost_tuple, next_state)
+        self.buffer.add(new_sample)
+
+        if len(self.buffer) >= self.N:
+            # actions are not needed for these updates, so ignore them
+            states, _, rewards, costs, next_states = \
+                    utils.arrays_to_tensors(self.buffer.sample_batch(self.N),
+                                            self.device)
+
+            # assemble pieces needed for policy and value function updates
+            r_mean = rewards.mean()
+            r_next_state_vals = self.rv(next_states).detach()
+            r_targets = rewards - r_mean*torch.ones(self.N) + r_next_state_vals
+            r_state_vals = self.rv(states)
+
+            c_mean = costs.mean()
+            c_next_state_vals = self.cv(next_states).detach()
+            c_targets = costs - c_mean*torch.ones(self.N) + c_next_state_vals
+            c_state_vals = self.cv(states)
+
+            # policy update
+            r_td_err = (r_targets - r_state_vals).detach()
+            c_td_err = (c_targets - c_state_vals).detach()
+            K = (r_td_err/c_td_err)*(r_td_err/r_mean_vals - c_td_err/c_mean_vals)
+            _, log_pis = self.pi.sample(states)
+
+            pi_loss = -K * log_pis.sum()
+            self.pi_optim.zero_grad()
+            pi_loss.backward()
+            self.pi_optim.step()
+
+            # value updates
+            r_loss = self.rv_loss(r_targets, r_state_vals)
+            self.rv_optim.zero_grad()
+            r_loss.backward()
+            self.rv_optim.step()
+
+            r_loss = self.rv_loss(r_targets, r_state_vals)
+            self.rv_optim.zero_grad()
+            r_loss.backward()
+            self.rv_optim.step()
+
+
+    def save_models(self, filename):
+        """Save models and optimizers."""
+
+        torch.save({
+                'using_cuda': self.__enable_cuda,
+                'pi_state_dict': self.pi.state_dict(),
+                'pi_optim_state_dict': self.pi_optim.state_dict(),
+                'rv_state_dict': self.rv.state_dict(),
+                'rv_optim_state_dict': self.rv_optim.state_dict(),
+                'cv_state_dict': self.cv.state_dict(),
+                'cv_optim_state_dict': self.cv_optim.state_dict(),
+        }, filename)
+
+    def load_models(self, filename, continue_training=True):
+        """Load models and optimizers."""
+        
+        models = torch.load(filename)
+
+        self.__enable_cuda = models['using_cuda']
+        self.pi.load_state_dict(models['pi_state_dict'])
+        self.pi_optim.load_state_dict(models['pi_optim_state_dict'])
+        self.rv.load_state_dict(models['rv_state_dict'])
+        self.rv_optim.load_state_dict(models['rv_optim_state_dict'])
+        self.cv.load_state_dict(models['cv_state_dict'])
+        self.cv_optim.load_state_dict(models['cv_optim_state_dict'])
+        
+        if continue_training:
+            self.pi.train()
+            self.rv.train()
+            self.cv.train()
+        else:
+            self.pi.eval()
+            self.rv.eval()
+            self.cv.eval()
+
+        self.enable_cuda(self.__enable_cuda, warn=False)
 
 
 
