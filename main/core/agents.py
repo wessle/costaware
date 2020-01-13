@@ -258,38 +258,46 @@ class ACAgent(RLAgent):
                     utils.arrays_to_tensors(self.buffer.sample_batch(self.N),
                                             self.device)
 
+            rewards = rewards.unsqueeze(dim=1)
+            costs = costs.unsqueeze(dim=1)
+
             # assemble pieces needed for policy and value function updates
+            # TODO: make better use of torch.no_grad() to improve memory efficiency
             r_mean = rewards.mean()
-            r_next_state_vals = self.rv(next_states).detach()
-            r_targets = rewards - r_mean*torch.ones(self.N) + r_next_state_vals
+            r_next_state_vals = self.rv(next_states)
+            r_targets = rewards - r_mean*torch.ones(self.N, 1, device=self.device) \
+                    + r_next_state_vals
             r_state_vals = self.rv(states)
 
             c_mean = costs.mean()
-            c_next_state_vals = self.cv(next_states).detach()
-            c_targets = costs - c_mean*torch.ones(self.N) + c_next_state_vals
+            c_next_state_vals = self.cv(next_states)
+            c_targets = costs - c_mean*torch.ones(self.N, 1, device=self.device) \
+                    + c_next_state_vals
             c_state_vals = self.cv(states)
 
+            # value updates
+            r_loss = self.rv_loss(r_targets.detach(), r_state_vals)
+            self.rv_optim.zero_grad()
+            r_loss.backward()
+            self.rv_optim.step()
+
+            c_loss = self.cv_loss(c_targets.detach(), c_state_vals)
+            self.cv_optim.zero_grad()
+            c_loss.backward()
+            self.cv_optim.step()
+
             # policy update
-            r_td_err = (r_targets - r_state_vals).detach()
-            c_td_err = (c_targets - c_state_vals).detach()
-            K = (r_td_err/c_td_err)*(r_td_err/r_mean_vals - c_td_err/c_mean_vals)
+            with torch.no_grad():
+                r_td_err = (r_targets - r_state_vals)
+                c_td_err = (c_targets - c_state_vals)
+                err_vector = ((r_mean/c_mean)*(
+                    r_td_err/r_mean - c_td_err/c_mean)).squeeze()
             _, log_pis = self.pi.sample(states)
 
-            pi_loss = -K * log_pis.sum()
+            pi_loss = -err_vector.dot(log_pis)
             self.pi_optim.zero_grad()
             pi_loss.backward()
             self.pi_optim.step()
-
-            # value updates
-            r_loss = self.rv_loss(r_targets, r_state_vals)
-            self.rv_optim.zero_grad()
-            r_loss.backward()
-            self.rv_optim.step()
-
-            r_loss = self.rv_loss(r_targets, r_state_vals)
-            self.rv_optim.zero_grad()
-            r_loss.backward()
-            self.rv_optim.step()
 
 
     def save_models(self, filename):
