@@ -20,5 +20,5 @@ Add new dependencies by editing the `install_requires` field in setup.py, then d
 - [ ] Implement `get_actions` method for `AllocationSimplex`
 - [X] Implement Q-learning agent
 - [ ] Write tests for Q-learning agent
-- [ ] Implement AC agent
+- [X] Implement AC agent
 - [ ] Write tests for AC agent
