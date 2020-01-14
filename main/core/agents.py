@@ -98,7 +98,7 @@ class RVIQLearningBasedAgent(RLAgent):
 
         self.state = state
         if np.random.uniform() < self.eps:
-            self.action = np.random.choice(self.actions)
+            self.action = self.actions[np.random.randint(len(self.actions))]
         else:
             self.action = self.actions[np.argmax(self.action_values(state))]
 
