@@ -178,16 +178,12 @@ class Asset:
             "bollinger": self.bollinger
         }
 
-    def summarize(self):
+    def summary(self):
         """
         Get a snapshot of the current state without updating the state at all.
         """
 
-        return {
-            "price":     self.price,
-            "momentum":  self.momentum,
-            "bollinger": self.bollinger
-        }
+        return (self.price, self.momentum, *self.bollinger)
 
     def __str__(self):
         """
