@@ -1,6 +1,7 @@
 import gym
 import main.utils.moments as moments
 import main.utils.ecdf as ecdf
+import main.utils.utils as utils
 import numpy as np
 
 from gym import spaces
@@ -14,7 +15,7 @@ class AllocationSimplex(spaces.Box):
     """
 
     def __init__(self, num_assets):
-        super.__init__(0.0, 1.0, shape=(num_assets,))
+        super().__init__(0.0, 1.0, shape=(num_assets,))
 
     def sample(self):
         """Sample uniformly from the unit simplex."""
@@ -30,19 +31,10 @@ class AllocationSimplex(spaces.Box):
                 and np.all(x <= self.high) and np.isclose(np.sum(x), 1.0)
 
     def __repr__(self):
-        return "AllocationSimplex" + str(self.shape[0])
+        return "AllocationSimplex" + str(self.shape[0] + "D")
 
     def __eq__(self, other):
         return isinstance(other, AllocationSimplex) and self.shape == other.shape
-
-    def get_actions(self):
-        """Return an array containing all possible actions.
-        
-        This will probably be called infrequently, so the array needn't
-        be stored.
-        """
-
-        raise NotImplemented("get_actions not implemented.")
 
 
 class CostAwareEnv(gym.Env):
@@ -65,7 +57,7 @@ class CostAwareEnv(gym.Env):
         self.portfolio = portfolio
 
         self.observation_space = self._observation_space()
-        self.action_space = spaces.Box(0., 1., shape=(len(portfolio),))
+        self.action_space = AllocationSimplex(len(portfolio))
 
     def _observation_space(self):
         """
@@ -136,6 +128,14 @@ class CostAwareEnv(gym.Env):
         self.__cost   = 0.
         self.portfolio.reset()
         self.state = self.portfolio.summary
+
+    def get_actions(self, num_steps):
+        """
+        Return a discretization of the action space with num_steps+1
+        partitions along each axis.
+        """
+
+        return utils.generate_simplex(len(self.portfolio), num_steps)
 
 
 class SharpeCostAwareEnv(CostAwareEnv):

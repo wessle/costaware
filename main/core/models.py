@@ -5,20 +5,6 @@ import torch.nn as nn
 import numpy as np
 
 
-def simple_network(input_dim, output_dim, hidden_layer_size=256):
-    net = nn.Sequential(nn.Linear(input_dim, hidden_layer_size),
-                        nn.ReLU(),
-                        nn.Linear(hidden_layer_size, output_dim))
-    return net
-
-
-class ValueNetwork(nn.Module):
-    # TODO
-
-    def __init__(self):
-       raise NotImplemented("__init__ not implemented")
-
-
 class PolicyNetwork(nn.Module):
     """Base class for stochastic policy networks."""
 
