@@ -64,27 +64,40 @@ class CostAwareEnv(gym.Env):
     def __init__(self, portfolio):
         self.portfolio = portfolio
 
-        self.observation_space = spaces.Dict({
-            "value": spaces.Box(low=0., high=np.inf, shape=(1,)),
-            "shares": spaces.Box(low=0, high=np.inf, shape=(len(portfolio),)),
-            "assets": spaces.Dict({
-                "price": spaces.Box(
-                    low=0, 
-                    high=np.inf, 
-                    shape=(len(portfolio),)
-                ),
-                "momentum": spaces.Box(
-                    low=0, 
-                    high=np.inf,
-                    shape=(len(portfolio),)
-                ),
-                "bollinger": spaces.Box(
-                    low=-np.inf, 
-                    high=np.inf, 
-                    shape=(2, len(portfolio)))
-            })
-        })
+        self.observation_space = self._observation_space()
         self.action_space = spaces.Box(0., 1., shape=(len(portfolio),))
+
+    def _observation_space(self):
+        """
+        The observation space for the environment is a 1-dimensional numpy array
+        whose length depends on the size of the portfolio specified for the
+        environment.
+
+        Each asset in the portfolio has four characteristics:
+            - price (lower bound = 0)
+            - momentum (lower bound = 0)
+            - lower bollinger band (lower bound = -oo)
+            - upper bollinger band (lower bound = -oo)
+        The overall portfolio has two additional characteristics:
+            - value (lower bound = 0)
+            - shares (lower bound = 0)
+        The structure of the observation space is a type of Box space. The order
+        is asserted to be
+            [
+                value, asset 1 share, asset 2 share, ... , asset n share, 
+                asset 1 price, asset 1 momentum, asset 1 lower bb, asset 1 upper bb,
+                asset 2 price, asset 2 momentum, asset 2 lower bb, asset 2 upper bb,
+                ... ,
+                asset n price, asset n momentum, asset n lower bb, asset n upper bb,
+            ]
+        """
+        size = 1 + len(self.portfolio) + 4 * len(self.portfolio)
+        upper_bounds = np.inf * np.ones(size)
+        lower_bounds = np.zeros(size)
+        lower_bounds[3+len(self.portfolio)::4] = -np.inf
+        lower_bounds[4+len(self.portfolio)::4] = -np.inf
+
+        return spaces.Box(low=lower_bounds, high=upper_bounds, dtype=np.float64)
 
     @property
     def reward(self):
@@ -155,9 +168,6 @@ class OmegaCostAwareEnv(CostAwareEnv):
         lower, upper = self.ecdf_estimator.lower, self.ecdf_estimator.upper
         lower -= 1e-1
         upper += 1e-1
-
-        # TODO worry about the case where lower > self.theta or upper <
-        # self.theta
 
         left_tail = np.linspace(lower, self.theta) if lower < self.theta else np.zeros(1)
         right_tail = np.linspace(self.theta, upper) if upper > self.theta else np.zeros(1)
