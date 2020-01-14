@@ -69,16 +69,8 @@ class Portfolio:
         Get a snapshot of the current state of the portfolio without updating
         the state at all.
         """
-        prices = np.array([asset.price for asset in self.assets])
-        momentum = np.array([asset.momentum for asset in self.assets])
-        bollinger = np.array([list(asset.bollinger) for asset in self.assets])
+        state = [self.value, *self.shares]
+        for asset in self.assets:
+            state += [*asset.summary()]
 
-        return OrderedDict({
-            "value": np.array([self.value]),
-            "shares": np.array(self.shares),
-            "assets": OrderedDict({
-                "price": prices,
-                "momentum": momentum,
-                "bollinger": bollinger,
-            }),
-        })
+        return np.array(state)
