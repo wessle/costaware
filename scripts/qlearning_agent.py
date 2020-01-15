@@ -54,16 +54,18 @@ num_episodes = 100
 episode_len = 100
 checkpoint_interval = 10
 
+average_action = 0.5*np.ones(2)
 for i in range(num_episodes):
     t0 = time()
     for _ in range(episode_len):
         action = agent.sample_action(env.state)
+        average_action = np.mean([average_action, action], axis=0)
         state, reward_cost_tuple, proceed, _  = env.step(action)
         agent.update(reward_cost_tuple, state)
     print('Episode {}: ${:.2f}, {:.2f}s'.format(i,
                                                 env.state[0],
                                                 time() - t0)) 
-    print(agent.sample_action(env.state))
+    print(average_action)
     env.reset()
 
     if i % checkpoint_interval == 0:
