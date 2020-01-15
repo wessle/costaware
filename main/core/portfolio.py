@@ -52,6 +52,7 @@ class Portfolio:
         """
         for asset in self.assets:
             asset.reset()
+        self.__value = self.__principal
         self.__shares = [weight * self.value / asset.price for asset, weight in zip(self.assets, self.weights)]
 
     def step(self) -> Tuple[float, List['Asset'], List[float]]:
