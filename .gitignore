@@ -5,4 +5,5 @@ costaware.egg-info
 wes_console_shortcuts.py
 data/*
 
+!data/note.txt
 !.gitignore
