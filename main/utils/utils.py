@@ -30,7 +30,7 @@ def two_asset_portfolio(
 
     return portfolio.Portfolio(
        [asset.Asset(init_price1, mean_return1, stdev_return1),
-       asset.Asset(init_price1, mean_return1, stdev_return1)],
+       asset.Asset(init_price2, mean_return2, stdev_return2)],
        [init_weight1, 1 - init_weight1],
        init_principal)
 

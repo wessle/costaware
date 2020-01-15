@@ -45,7 +45,7 @@ class RVIQLearningBasedAgent(RLAgent):
 
     def __init__(self, buffer_maxlen, batchsize, actions,
                  q_network, q_lr, rho_lr,
-                 eps=0.01, enable_cuda=True, optimizer=torch.optim.Adam,
+                 eps=0.1, enable_cuda=True, optimizer=torch.optim.Adam,
                  grad_clip_radius=None, rho_init=0.0, rho_clip_radius=None):
 
         self.buffer = utils.Buffer(buffer_maxlen)
@@ -195,7 +195,8 @@ class ACAgent(RLAgent):
                  enable_cuda=True,
                  policy_optimizer=torch.optim.Adam,
                  v_optimizer=torch.optim.Adam,
-                 grad_clip_radius=None):
+                 grad_clip_radius=None,
+                 reward_cost_mean_floor=0.01):
 
         self.buffer = utils.Buffer(buffer_maxlen)
         self.N = batchsize
@@ -207,10 +208,13 @@ class ACAgent(RLAgent):
         self.cv = copy.deepcopy(self.rv)
         self.cv_optim = v_optimizer(self.cv.parameters(), lr=v_lr)
         self.cv_loss = torch.nn.MSELoss()
+        self.grad_clip_radius = grad_clip_radius
 
         self.__enable_cuda = enable_cuda
         self.enable_cuda(self.__enable_cuda, warn=False)
         # NOTE: self.device is defined when self.enable_cuda is called
+
+        self.reward_cost_mean_floor = reward_cost_mean_floor
 
         self.state = None
         self.action = None
@@ -243,6 +247,9 @@ class ACAgent(RLAgent):
         self.pi.to(self.device)
         self.rv.to(self.device)
         self.cv.to(self.device)
+        
+    def _mean_floor(self, val):
+        return torch.clamp(val, self.reward_cost_mean_floor, np.inf)
 
     def update(self, reward_cost_tuple, next_state):
         """Perform the update step."""
@@ -263,13 +270,13 @@ class ACAgent(RLAgent):
 
             # assemble pieces needed for policy and value function updates
             # TODO: make better use of torch.no_grad() to improve memory efficiency
-            r_mean = rewards.mean()
+            r_mean = self._mean_floor(rewards.mean())
             r_next_state_vals = self.rv(next_states)
             r_targets = rewards - r_mean*torch.ones(self.N, 1, device=self.device) \
                     + r_next_state_vals
             r_state_vals = self.rv(states)
 
-            c_mean = costs.mean()
+            c_mean = self._mean_floor(costs.mean())
             c_next_state_vals = self.cv(next_states)
             c_targets = costs - c_mean*torch.ones(self.N, 1, device=self.device) \
                     + c_next_state_vals
@@ -279,11 +286,17 @@ class ACAgent(RLAgent):
             r_loss = self.rv_loss(r_targets.detach(), r_state_vals)
             self.rv_optim.zero_grad()
             r_loss.backward()
+            if self.grad_clip_radius is not None:
+                torch.nn.utils.clip_grad_norm_(self.rv.parameters(),
+                                               self.grad_clip_radius)
             self.rv_optim.step()
 
             c_loss = self.cv_loss(c_targets.detach(), c_state_vals)
             self.cv_optim.zero_grad()
             c_loss.backward()
+            if self.grad_clip_radius is not None:
+                torch.nn.utils.clip_grad_norm_(self.rv.parameters(),
+                                               self.grad_clip_radius)
             self.cv_optim.step()
 
             # policy update
@@ -297,6 +310,9 @@ class ACAgent(RLAgent):
             pi_loss = -err_vector.dot(log_pis)
             self.pi_optim.zero_grad()
             pi_loss.backward()
+            if self.grad_clip_radius is not None:
+                torch.nn.utils.clip_grad_norm_(self.pi.parameters(),
+                                               self.grad_clip_radius)
             self.pi_optim.step()
 
 

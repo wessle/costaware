@@ -7,15 +7,16 @@ from time import time
 import main.core.agents as agents
 import main.core.asset as asset
 import main.core.envs as envs
+import main.core.models as models
 import main.utils.utils as utils
 
 
 # asset parameters
 price1 = 1
-mean1 = 0.05
+mean1 = 0.0
 stdev1 = 0
 price2 = 1
-mean2 = 0.0
+mean2 = 0.05
 stdev2 = 0
 weight1 = 0.5
 principal = 100
@@ -24,31 +25,35 @@ portfolio = utils.two_asset_portfolio(price1, mean1, stdev1,
                                       price2, mean2, stdev2,
                                       weight1, principal)
 env = envs.SharpeCostAwareEnv(portfolio)
+# env = envs.SortinoCostAwareEnv(portfolio, np.mean([mean1, mean2]))
 env.reset()
 
 
 # agent parameters
 action_dim = len(portfolio)
 state_dim = len(env.state)
+min_alpha = 0.001
+max_alpha = 100
 buffer_maxlen = 10**6
 batchsize = 256
-discretization_steps = 4
-q_lr = 1e-3
-rho_lr = 1e-3
-eps = 0.3
-checkpoint_filename = '../data/qlearning_checkpoint.pt'
-loading_checkpoint = False
+policy_lr = 1e-3
+v_lr = 1e-3
+checkpoint_filename = '../data/ac_checkpoint.pt'
+loading_checkpoint = True
 
-Q = utils.simple_network(state_dim + action_dim, 1)
-agent = agents.RVIQLearningBasedAgent(
-    buffer_maxlen, batchsize, env.get_actions(discretization_steps),
-    Q, q_lr, rho_lr, eps=eps)
+policy = models.DirichletPolicy(state_dim, action_dim,
+                                min_alpha=min_alpha,
+                                max_alpha=max_alpha)
+v = utils.simple_network(state_dim, 1)
+agent = agents.ACAgent(buffer_maxlen, batchsize,
+                       policy, v,
+                       policy_lr, v_lr)
 if loading_checkpoint:
     agent.load_models(checkpoint_filename)
 
 
 # training session parameters
-num_episodes = 100
+num_episodes = 50
 episode_len = 100
 checkpoint_interval = 10
 
@@ -66,7 +71,6 @@ for i in range(num_episodes):
 
     if i % checkpoint_interval == 0:
         agent.save_models(checkpoint_filename)
-
 
 
 
