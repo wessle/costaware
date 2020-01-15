@@ -25,6 +25,7 @@ portfolio = utils.two_asset_portfolio(price1, mean1, stdev1,
                                       price2, mean2, stdev2,
                                       weight1, principal)
 env = envs.SharpeCostAwareEnv(portfolio)
+# env = envs.OmegaCostAwareEnv(portfolio, np.mean([mean1, mean2]))
 # env = envs.SortinoCostAwareEnv(portfolio, np.mean([mean1, mean2]))
 env.reset()
 
