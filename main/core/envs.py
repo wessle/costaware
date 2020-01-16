@@ -97,11 +97,19 @@ class CostAwareEnv(gym.Env):
         """
         return self.__reward
 
+    @reward.setter
+    def reward(self, new_reward):
+        self.__reward = new_reward
+
     @property
     def cost(self):
         """
         """
         return self.__cost
+
+    @cost.setter
+    def cost(self, new_cost):
+        self.__cost = new_cost
 
     def _update_reward_and_cost(self, portfolio_returns):
         raise NotImplementedError("Implemented by subclasses.")
@@ -149,7 +157,7 @@ class SharpeCostAwareEnv(CostAwareEnv):
         super().reset()
 
     def _update_reward_and_cost(self, portfolio_returns):
-        self.__reward, self.__cost = self.estimator(portfolio_returns)
+        self.reward, self.cost = self.estimator(portfolio_returns)
 
 
 class OmegaCostAwareEnv(CostAwareEnv):
@@ -172,8 +180,8 @@ class OmegaCostAwareEnv(CostAwareEnv):
         left_tail = np.linspace(lower, self.theta) if lower < self.theta else np.zeros(1)
         right_tail = np.linspace(self.theta, upper) if upper > self.theta else np.zeros(1)
 
-        self.__cost   = np.trapz(cdf(left_tail), left_tail)
-        self.__reward = np.trapz(1. - cdf(right_tail), right_tail)
+        self.cost   = np.trapz(cdf(left_tail), left_tail)
+        self.reward = np.trapz(1. - cdf(right_tail), right_tail)
 
 
 class SortinoCostAwareEnv(CostAwareEnv):
@@ -193,8 +201,8 @@ class SortinoCostAwareEnv(CostAwareEnv):
         returns_diff = (self.threshold - self.ecdf_estimator.values) *\
             (self.ecdf_estimator.values <= self.threshold)
 
-        self.__reward = portfolio_returns - self.threshold
-        self.__cost = np.sqrt(
+        self.reward = portfolio_returns - self.threshold
+        self.cost = np.sqrt(
             np.sum(returns_diff * returns_diff) / len(self.ecdf_estimator)
         )
 
