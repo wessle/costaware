@@ -8,7 +8,7 @@ SIM_LEN = 1000
 env = envs.SortinoCostAwareEnv(
     portfolio.Portfolio(
         [
-            asset.Asset(1., 0.05, 0.),
+            asset.Asset(1., 0.05, 0.1),
             asset.Asset(1., 0.025, 0.)
         ], 
         [0.5, 0.5], 
@@ -21,7 +21,7 @@ env.reset()
 for i in range(SIM_LEN):
     action = [0.5, 0.5]
     # state, (reward, cost), proceed, _  = env.step(action)
-    print(env.step())
+    print(env.step(action))
 
 
 
