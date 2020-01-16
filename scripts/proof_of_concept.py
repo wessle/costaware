@@ -20,7 +20,8 @@ env.reset()
 
 for i in range(SIM_LEN):
     action = [0.5, 0.5]
-    state, (reward, cost), proceed, _  = env.step(action)
+    # state, (reward, cost), proceed, _  = env.step(action)
+    print(env.step())
 
 
 

@@ -9,7 +9,7 @@ from gym import spaces
 
 ########## Functions for use in testing ##########
 
-def simple_network(input_dim, output_dim, hidden_layer_size=256):
+def single_layer_net(input_dim, output_dim, hidden_layer_size=256):
     """
     Generate a fully-connected single-layer network for quick use.
     """
@@ -17,6 +17,20 @@ def simple_network(input_dim, output_dim, hidden_layer_size=256):
         torch.nn.Linear(input_dim, hidden_layer_size),
         torch.nn.ReLU(),
         torch.nn.Linear(hidden_layer_size, output_dim))
+    return net
+
+def two_layer_net(input_dim, output_dim,
+                  hidden_layer1_size=256,
+                  hidden_layer2_size=256):
+    """
+    Generate a fully-connected two-layer network for quick use.
+    """
+    net = torch.nn.Sequential(
+        torch.nn.Linear(input_dim, hidden_layer1_size),
+        torch.nn.ReLU(),
+        torch.nn.Linear(hidden_layer1_size, hidden_layer2_size),
+        torch.nn.ReLU(),
+        torch.nn.Linear(hidden_layer2_size, output_dim))
     return net
 
 import main.core.portfolio as portfolio
