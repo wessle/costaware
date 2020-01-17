@@ -14,7 +14,7 @@ if __name__ == '__main__':
 
     # asset parameters
     price1 = 1
-    mean1 = 0.1
+    mean1 = 0.0003
     stdev1 = 0
     price2 = 1
     mean2 = 0.0
@@ -36,10 +36,10 @@ if __name__ == '__main__':
     state_dim = len(env.state)
     buffer_maxlen = 10**6
     batchsize = 256
-    discretization_steps = 1
+    discretization_steps = 4
     q_lr = 1e-3
     rho_lr = 1e-3
-    eps = 0.3
+    eps = 0.2
     enable_cuda = False
     grad_clip_radius = None # set to None for no clipping
     rho_clip_radius = None # set to None for no clipping
@@ -63,7 +63,7 @@ if __name__ == '__main__':
 
     # training session parameters
     num_episodes = 1000
-    episode_len = 30
+    episode_len = 365
     checkpoint_interval = 10
 
     for i in range(num_episodes):
