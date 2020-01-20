@@ -77,7 +77,8 @@ class DirichletPolicyTwoLayer(DirichletPolicyBase):
     def __init__(self, state_dim, action_dim,
                  hidden_layer1_size=256,
                  hidden_layer2_size=256,
-                 min_alpha=-np.inf, max_alpha=np.inf):
+                 min_alpha=-np.inf, max_alpha=np.inf,
+                 init_std=0.0001):
 
         super().__init__(min_alpha, max_alpha)
 
@@ -85,17 +86,17 @@ class DirichletPolicyTwoLayer(DirichletPolicyBase):
         self.linear2 = nn.Linear(hidden_layer1_size, hidden_layer2_size)
         self.linear3 = nn.Linear(hidden_layer2_size, action_dim)
 
-        nn.init.normal_(self.linear1.weight, std=0.001)
-        nn.init.normal_(self.linear1.bias, std=0.001)
-        nn.init.normal_(self.linear2.weight, std=0.001)
-        nn.init.normal_(self.linear2.bias, std=0.001)
-        nn.init.normal_(self.linear3.weight, std=0.001)
-        nn.init.normal_(self.linear3.bias, std=0.001)
+        nn.init.normal_(self.linear1.weight, std=init_std)
+        nn.init.normal_(self.linear1.bias, std=init_std)
+        nn.init.normal_(self.linear2.weight, std=init_std)
+        nn.init.normal_(self.linear2.bias, std=init_std)
+        nn.init.normal_(self.linear3.weight, std=init_std)
+        nn.init.normal_(self.linear3.bias, mean=-np.log(max_alpha-1), std=init_std)
 
     def forward(self, state):
         x = F.relu(self.linear1(state))
         x = F.relu(self.linear2(x))
-        action = self.max_alpha * F.sigmoid(self.linear3(x))
+        action = self.max_alpha * torch.sigmoid(self.linear3(x))
         return torch.clamp(action,
                            self.min_alpha, self.max_alpha)
 

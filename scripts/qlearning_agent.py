@@ -18,7 +18,7 @@ if __name__ == '__main__':
     stdev1 = 0
     price2 = 1
     mean2 = 0.0
-    stdev2 = 0
+    stdev2 = 0.0001
     weight1 = 0.5
     principal = 100
 
@@ -34,7 +34,7 @@ if __name__ == '__main__':
     # agent parameters
     action_dim = len(portfolio)
     state_dim = len(env.state)
-    buffer_maxlen = 10**6
+    buffer_maxlen = 10**4
     batchsize = 256
     discretization_steps = 4
     q_lr = 1e-3
@@ -45,7 +45,7 @@ if __name__ == '__main__':
     rho_clip_radius = None # set to None for no clipping
     checkpoint_filename = '../data/qlearning_checkpoint.pt'
     loading_checkpoint = False
-    Q_hidden_units = 256
+    Q_hidden_units = 32
 
     Q = utils.two_layer_net(state_dim + action_dim, 1,
                             Q_hidden_units, Q_hidden_units)
@@ -62,7 +62,7 @@ if __name__ == '__main__':
 
 
     # training session parameters
-    num_episodes = 1000
+    num_episodes = 500
     episode_len = 365
     checkpoint_interval = 10
 
