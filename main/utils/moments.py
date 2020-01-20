@@ -44,7 +44,7 @@ def welford_estimator():
         nonlocal k, mean, unnorm_var
         k += 1
         old_mean = mean
-        mean += (next_input - old_mean) / k
+        mean += next_input / k - old_mean / k
         unnorm_var += (next_input - old_mean) * (next_input - mean)
         var = 0. if k == 1 else unnorm_var / (k - 1)
 
