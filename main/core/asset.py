@@ -107,17 +107,21 @@ class Asset:
                  float, increment_t: float = 1., ema_decay: float = 0.9) -> None:
         """
         """
-        self.initial_price = initial_price
-        self.mean_return   = mean_return
-        self.stdev_return  = stdev_return
-        self.increment_t   = increment_t
-        self.ema_decay     = ema_decay  # ema == Exponential Moving Average
-        self.__process     = None  # possibly want to not initialize until self.reset() 
+        self.initial_price   = initial_price
+        self.mean_return     = mean_return
+        self.stdev_return    = stdev_return
+        self.increment_t     = increment_t
+        self.ema_decay       = ema_decay  # ema == Exponential Moving Average
+        self.__process       = None  # possibly want to not initialize until self.reset() 
                                    # is called explicitly by the user
-        self.__price       = None
-        self.__momentum    = None
-        self.__ema_var     = None
-        self.__bollinger   = (None, None)
+        self.__avg_estimator = None
+        self.__vol_estimator = None
+        self.__price         = None
+        self.__avg_price     = None
+        self.__sqr_vol       = None
+        self.__momentum      = None
+        self.__ema_var       = None
+        self.__bollinger     = (None, None)
 
     @property
     def process(self) -> float:
@@ -134,6 +138,13 @@ class Asset:
         return self.__price
 
     @property
+    def average_price(self) -> float:
+        """
+        Average price of the asset
+        """
+        return self.__avg_price
+
+    @property
     def momentum(self) -> float:
         """
         Exponential moving average
@@ -146,6 +157,13 @@ class Asset:
         Exponential Bollinger bands
         """
         return self.__bollinger
+
+    @property
+    def volatility(self) -> float:
+        """
+        Volatility of the asset price
+        """
+        return np.sqrt(self.__sqr_vol)
 
     def reset(self) -> None:
         """
@@ -160,22 +178,34 @@ class Asset:
         self.__ema_var   = 0.
         self.__bollinger = tuple(np.array([self.__momentum, self.__momentum]))
 
+        # Average return and volatility processes
+        self.__avg_estimator = moments.welford_estimator()
+        self.__vol_estimator = moments.welford_estimator()
+
+        self.__avg_price, _ = self.__avg_estimator(self.__price)
+        self.__sqr_vol      = 0.
+
     def step(self) -> Tuple[float, float, Tuple[float, float]]:
         """
         Computes one step of the asset price change.
 
         Returns the updated price, momentum, and Bollinger bands
         """
+        old_price        = self.__price
         old_momentum     = self.__momentum
-        self.__price     = next(self.__process)
         self.__momentum  = self.ema_decay * self.__momentum + (1. - self.ema_decay) * self.__price
         self.__ema_var  += (self.__price - old_momentum) * (self.__price - self.__momentum)
         self.__bollinger = tuple(self.__momentum + 2. * np.sqrt(self.__ema_var) * np.array([-1., 1.]))
 
+        self.__avg_price , _ = self.__avg_estimator(self.__price) 
+        _, self.__sqr_vol    1= self.__vol_estimator(np.log(self.__price / old_price))
+
         return {
             "price":     self.price,
             "momentum":  self.momentum,
-            "bollinger": self.bollinger
+            "bollinger": self.bollinger,
+            "average price": self.average_price,
+            "volatility": self.volatility
         }
 
     def summary(self):
@@ -183,7 +213,7 @@ class Asset:
         Get a snapshot of the current state without updating the state at all.
         """
 
-        return (self.price, self.momentum, *self.bollinger)
+        return (self.price, self.momentum, *self.bollinger, self.average_price, self.volatility)
 
     def __str__(self):
         """

@@ -70,7 +70,7 @@ class Portfolio:
         Get a snapshot of the current state of the portfolio without updating
         the state at all.
         """
-        state = [self.value, *self.shares]
+        state = [self.value]  # don't report the number of shares at the moment
         for asset in self.assets:
             state += [*asset.summary()]
 
