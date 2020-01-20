@@ -198,7 +198,7 @@ class Asset:
         self.__bollinger = tuple(self.__momentum + 2. * np.sqrt(self.__ema_var) * np.array([-1., 1.]))
 
         self.__avg_price , _ = self.__avg_estimator(self.__price) 
-        _, self.__sqr_vol    1= self.__vol_estimator(np.log(self.__price / old_price))
+        _, self.__sqr_vol    = self.__vol_estimator(np.log(self.__price / old_price))
 
         return {
             "price":     self.price,
