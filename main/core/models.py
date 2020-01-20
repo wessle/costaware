@@ -85,9 +85,16 @@ class DirichletPolicyTwoLayer(DirichletPolicyBase):
         self.linear2 = nn.Linear(hidden_layer1_size, hidden_layer2_size)
         self.linear3 = nn.Linear(hidden_layer2_size, action_dim)
 
+        nn.init.normal_(self.linear1.weight, std=0.001)
+        nn.init.normal_(self.linear1.bias, std=0.001)
+        nn.init.normal_(self.linear2.weight, std=0.001)
+        nn.init.normal_(self.linear2.bias, std=0.001)
+        nn.init.normal_(self.linear3.weight, std=0.001)
+        nn.init.normal_(self.linear3.bias, std=0.001)
+
     def forward(self, state):
         x = F.relu(self.linear1(state))
-        x = F.sigmoid(self.linear2(x))
+        x = F.relu(self.linear2(x))
         action = self.max_alpha * F.sigmoid(self.linear3(x))
         return torch.clamp(action,
                            self.min_alpha, self.max_alpha)

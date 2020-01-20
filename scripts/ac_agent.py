@@ -15,10 +15,10 @@ if __name__ == '__main__':
 
     # asset parameters
     price1 = 1
-    mean1 = 0.05
+    mean1 = 0.0003
     stdev1 = 0
     price2 = 1
-    mean2 = 0.05
+    mean2 = 0.000
     stdev2 = 0
     weight1 = 0.5
     principal = 100
@@ -35,29 +35,29 @@ if __name__ == '__main__':
     # agent parameters
     action_dim = len(portfolio)
     state_dim = len(env.state)
-    min_alpha = 0.001
-    max_alpha = 10
+    min_alpha = 0.01
+    max_alpha = 50
     buffer_maxlen = 10**6
     batchsize = 256
-    policy_lr = 1e-3
-    v_lr = 1e-3
+    policy_lr = 1e-2
+    v_lr = 1e-2
     enable_cuda = True
     grad_clip_radius = None # set to None for no clipping
     checkpoint_filename = '../data/ac_checkpoint.pt'
     loading_checkpoint = False
-    policy_hidden_units = 64
-    v_hidden_units = 64
+    policy_hidden_units = 256
+    v_hidden_units = 256
 
-    policy = models.DirichletPolicySingleLayer(state_dim, action_dim,
-                                    min_alpha=min_alpha,
-                                    max_alpha=max_alpha,
-                                    hidden_layer_size=policy_hidden_units)
-
-#    policy = models.DirichletPolicyTwoLayer(state_dim, action_dim,
+#    policy = models.DirichletPolicySingleLayer(state_dim, action_dim,
 #                                    min_alpha=min_alpha,
 #                                    max_alpha=max_alpha,
-#                                    hidden_layer1_size=policy_hidden_units,
-#                                    hidden_layer2_size=policy_hidden_units)
+#                                    hidden_layer_size=policy_hidden_units)
+
+    policy = models.DirichletPolicyTwoLayer(state_dim, action_dim,
+                                    min_alpha=min_alpha,
+                                    max_alpha=max_alpha,
+                                    hidden_layer1_size=policy_hidden_units,
+                                    hidden_layer2_size=policy_hidden_units)
 
     v = utils.two_layer_net(state_dim, 1, v_hidden_units, v_hidden_units)
     agent = agents.ACAgent(buffer_maxlen, batchsize,
@@ -71,9 +71,9 @@ if __name__ == '__main__':
 
 
     # training session parameters
-    num_episodes = 100
-    episode_len = 30
-    checkpoint_interval = 10
+    num_episodes = 1000
+    episode_len = 365
+    checkpoint_interval = 100
 
     for i in range(num_episodes):
         t0 = time()
@@ -82,7 +82,6 @@ if __name__ == '__main__':
             action = agent.sample_action(env.state)
             average_action = np.mean([average_action, action], axis=0)
             state, reward_cost_tuple, proceed, _  = env.step(action)
-            print(reward_cost_tuple)
             agent.update(reward_cost_tuple, state)
         print('Episode {:<6} | ${:>15.2f} | {:.2f}s | {}'.format(i,
                                                         env.state[0],
