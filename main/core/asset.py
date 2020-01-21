@@ -193,9 +193,13 @@ class Asset:
         """
         old_price        = self.__price
         old_momentum     = self.__momentum
-        self.__momentum  = self.ema_decay * self.__momentum + (1. - self.ema_decay) * self.__price
-        self.__ema_var  += (self.__price - old_momentum) * (self.__price - self.__momentum)
-        self.__bollinger = tuple(self.__momentum + 2. * np.sqrt(self.__ema_var) * np.array([-1., 1.]))
+        self.__price     = next(self.__process)
+        self.__momentum  = self.ema_decay * self.__momentum + \
+            (1. - self.ema_decay) * self.__price
+        self.__ema_var  += (self.__price - old_momentum) * \
+            (self.__price - self.__momentum)
+        self.__bollinger = tuple(self.__momentum + \
+                                 2. * np.sqrt(self.__ema_var) * np.array([-1., 1.]))
 
         self.__avg_price , _ = self.__avg_estimator(self.__price) 
         _, self.__sqr_vol    = self.__vol_estimator(np.log(self.__price / old_price))
