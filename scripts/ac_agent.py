@@ -15,10 +15,10 @@ if __name__ == '__main__':
 
     # asset parameters
     price1 = 1
-    mean1 = 0.0003
-    stdev1 = 0
+    mean1 = 5e-3
+    stdev1 = 0.0000
     price2 = 1
-    mean2 = 0.000
+    mean2 = -5e-3
     stdev2 = 0
     weight1 = 0.5
     principal = 100
@@ -37,10 +37,10 @@ if __name__ == '__main__':
     state_dim = len(env.state)
     min_alpha = 0.01
     max_alpha = 50
-    buffer_maxlen = 10**6
-    batchsize = 256
-    policy_lr = 1e-2
-    v_lr = 1e-2
+    buffer_maxlen = 10**5
+    batchsize = 64
+    policy_lr = 1e-3
+    v_lr = 1e-3
     enable_cuda = True
     grad_clip_radius = None # set to None for no clipping
     checkpoint_filename = '../data/ac_checkpoint.pt'
