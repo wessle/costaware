@@ -3,11 +3,15 @@ import torch
 import random
 from collections import deque
 import yaml
+import pickle
+import os
+from datetime import datetime
+from shutil import copyfile
 from typing import List, Tuple
 from gym import spaces
 
 
-########## Functions for use in testing ##########
+########## Less important functions for use in testing ##########
 
 def single_layer_net(input_dim, output_dim, hidden_layer_size=256):
     """
@@ -49,7 +53,7 @@ def two_asset_portfolio(
        init_principal)
 
 
-########## Functions for use in important objects in this package ##########
+########## Important functions ##########
 
 def load_config(filename):
     """Load and return a config file."""
@@ -57,6 +61,33 @@ def load_config(filename):
     with open(filename, 'r') as f:
         config = yaml.safe_load(f)
     return config
+
+def create_logdir(directory, algorithm, env_name, config_path):
+    """
+    Create a directory inside the specified directory for
+    logging experiment results and return its path name.
+
+    Include the environment name (Sharpe, etc.) in the directory name,
+    and also copy the config
+    """
+
+    experiment_dir = f"{directory}/{algorithm}-{env_name}-{datetime.now():%Y-%m-%d_%H:%M:%S}"
+    if not os.path.exists(experiment_dir):
+        os.makedirs(experiment_dir)
+    if config_path is not None:
+        copyfile(config_path, f"{experiment_dir}/config.yml")
+
+    return experiment_dir
+
+def save_object(obj, filename):
+    """Save an object, e.g. a list of returns for an experiment."""
+    with open(filename, 'wb') as fp:
+        pickle.dump(obj, fp)
+
+def load_object(filename):
+    """Load an object, e.g. a list of returns to be plotted."""
+    with open(filename, 'rb') as fp:
+        return pickle.load(fp)
 
 def array_to_tensor(array, device):
     """Convert numpy array to tensor."""

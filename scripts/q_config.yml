@@ -1,0 +1,34 @@
+# environment parameters
+price1: 1
+mean1: 0.0005
+stdev1: 0
+price2: 1
+mean2: -0.0005
+stdev2: 0.0001
+weight1: 0.5
+principal: 100
+
+
+# agent parameters
+buffer_maxlen: 100000
+batchsize: 256
+discretization_steps: 4
+q_lr: 0.001
+rho_lr: 0.001
+eps: 0.3
+enable_cuda: False
+grad_clip_radius: null # set to null for no clipping
+rho_clip_radius: null # set to null for no clipping
+checkpoint_filename: '../data/qlearning_checkpoint.pt'
+loading_checkpoint: False
+Q_hidden_units: 64
+
+
+# experiment parameters
+algorithm_name: 'Q'
+env_name: 'Sharpe' # 'Omega' 'Sortino'
+num_episodes: 500
+episode_len: 365
+checkpoint_interval: 10
+loading_checkpoint: False
+log_dir: '../data/'

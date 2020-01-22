@@ -1,0 +1,32 @@
+# asset parameters
+price1: 1
+mean1: 0.0005
+stdev1: 0
+price2: 1
+mean2: -0.0005
+stdev2: 0.0001
+weight1: 0.5
+principal: 100
+
+
+# agent parameters
+buffer_maxlen: 100000
+batchsize: 64
+min_alpha: 0.01
+max_alpha: 10
+policy_lr: 0.001
+v_lr: 0.01
+enable_cuda: True
+grad_clip_radius: null # set to null for no clipping
+policy_hidden_units: 256
+v_hidden_units: 256
+
+
+# experiment parameters
+algorithm_name: 'AC'
+env_name: 'Sharpe' # 'Omega' 'Sortino'
+num_episodes: 2000
+episode_len: 365
+checkpoint_interval: 100
+loading_checkpoint: False
+log_dir: '../data/'
