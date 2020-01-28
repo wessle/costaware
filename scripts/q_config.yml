@@ -1,3 +1,6 @@
+# number of pytorch threads to allocate
+num_threads: 2
+
 # asset parameters
 init_prices: [1, 1, 1]
 mean_returns: [0.0005, 0.0005, -0.0005]
@@ -12,7 +15,7 @@ discretization_steps: 4
 q_lr: 0.001
 rho_lr: 0.001
 eps: 0.3
-enable_cuda: True
+enable_cuda: False
 grad_clip_radius: null # set to null for no clipping
 rho_clip_radius: null # set to null for no clipping
 Q_hidden_units: 64

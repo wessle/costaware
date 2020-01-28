@@ -102,7 +102,8 @@ if __name__ == '__main__':
                                                         time() - t0,
                                                         average_action.round(
                                                             decimals=2)))
-        print(agent.pi.forward(torch.FloatTensor(env.state).to('cuda')).cpu().detach().numpy())
+        print(agent.pi.forward(
+            torch.FloatTensor(env.state).to(agent.device)).cpu().detach().numpy())
         env.reset()
 
         if i + 1 % checkpoint_interval == 0:

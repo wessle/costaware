@@ -14,8 +14,10 @@ import main.utils.utils as utils
 if __name__ == '__main__':
 
     config_path = 'q_config.yml'
-
     config = utils.load_config(config_path)
+
+    # Set the number of threads pytorch can use
+    torch.set_num_threads(config['num_threads'])
 
     # experiment parameters
     algorithm_name = config['algorithm_name']
