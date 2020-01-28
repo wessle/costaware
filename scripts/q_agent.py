@@ -29,25 +29,23 @@ if __name__ == '__main__':
     loading_checkpoint = config['loading_checkpoint']
 
     # asset parameters
-    price1 = config['price1']
-    mean1 = config['mean1']
-    stdev1 = config['stdev1']
-    price2 = config['price2']
-    mean2 = config['mean2']
-    stdev2 = config['stdev2']
-    weight1 = config['weight1']
-    principal = config['principal']
-    env_name = config['env_name']
+    init_prices = config['init_prices']
+    mean_returns = config['mean_returns']
+    stdev_returns = config['stdev_returns']
+    init_weights = config['init_weights']
+    init_principal = config['init_principal']
 
-    portfolio = utils.two_asset_portfolio(price1, mean1, stdev1,
-                                          price2, mean2, stdev2,
-                                          weight1, principal)
+    portfolio = utils.make_portfolio(init_prices,
+                                     mean_returns,
+                                     stdev_returns,
+                                     init_weights,
+                                     init_principal)
 
     env_builder = eval('envs.' + env_name + 'CostAwareEnv')
     if env_name == 'Sharpe':
         env = env_builder(portfolio)
     else:
-        env = env_builder(portfolio, np.mean([mean1, mean2]))
+        env = env_builder(portfolio, np.mean(mean_returns))
     env.reset()
 
 
@@ -63,8 +61,6 @@ if __name__ == '__main__':
     enable_cuda = config['enable_cuda']
     grad_clip_radius = config['grad_clip_radius']
     rho_clip_radius = config['rho_clip_radius']
-    checkpoint_filename = config['checkpoint_filename']
-    loading_checkpoint = config['loading_checkpoint']
     Q_hidden_units = config['Q_hidden_units']
 
     Q = utils.two_layer_net(state_dim + action_dim, 1,
@@ -84,7 +80,7 @@ if __name__ == '__main__':
     end_values = []
     for i in range(num_episodes):
         t0 = time()
-        average_action = 0.5*np.ones(2)
+        average_action = (1/action_dim)*np.ones(action_dim)
         for _ in range(episode_len):
             action = agent.sample_action(env.state)
             average_action = np.mean([average_action, action], axis=0)
@@ -94,10 +90,11 @@ if __name__ == '__main__':
         print('Episode {:<6} | ${:>15.2f} | {:.2f}s | {}'.format(i,
                                                         env.state[0],
                                                         time() - t0,
-                                                        average_action))
+                                                        average_action.round(
+                                                            decimals=2)))
         env.reset()
 
-        if i % checkpoint_interval == 0:
+        if i + 1 % checkpoint_interval == 0:
             agent.save_models(os.path.join(experiment_dir, 'models.pt'))
             utils.save_object(end_values, os.path.join(experiment_dir, 'end_values.pkl'))
 

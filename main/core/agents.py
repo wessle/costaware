@@ -58,7 +58,7 @@ class RVIQLearningBasedAgent(RLAgent):
         self.__enable_cuda = enable_cuda
         self.enable_cuda(self.__enable_cuda, warn=False)
         # NOTE: self.device is defined when self.enable_cuda is called
-        self.torch_actions = list(utils.arrays_to_tensors(actions, self.device))
+        self.torch_actions = torch.FloatTensor(actions).to(self.device)
 
         self.q_optim = optimizer(self.q.parameters(), lr=q_lr)
         self.rho_lr = rho_lr
@@ -70,24 +70,32 @@ class RVIQLearningBasedAgent(RLAgent):
         self.action = None
 
     def action_values(self, state):
-        """Return list of action values for current state."""
+        """
+        Return list of action values for current state.
+        State must be a torch tensor.
+        """
 
         with torch.no_grad():
-            state = utils.array_to_tensor(state, self.device)
-            values = [self.q(torch.cat([state, action])).item()
-                      for action in self.torch_actions]
+            values = self.q(torch.cat([
+                state.repeat(self.torch_actions.size()[0], 1),
+                self.torch_actions], axis=1))
 
+#        with torch.no_grad():
+#            state = utils.array_to_tensor(state, self.device)
+#            values = [self.q(torch.cat([state, action])).item()
+#                      for action in self.torch_actions]
         return values
 
     def state_value(self, state):
         """Return value estimate of the current state."""
 
-        return max(self.action_values(state))
+        return torch.max(self.action_values(state))
 
     def state_values(self, states):
         """Return value estimates of an array of states."""
 
-        return [self.state_value(state) for state in states]
+        return torch.FloatTensor(
+            [self.state_value(state) for state in states]).to(self.device)
 
     def sample_action(self, state):
         """
@@ -97,10 +105,12 @@ class RVIQLearningBasedAgent(RLAgent):
         """
 
         self.state = state
+        state = utils.array_to_tensor(state, self.device)
         if np.random.uniform() < self.eps:
             self.action = self.actions[np.random.randint(len(self.actions))]
         else:
-            self.action = self.actions[np.argmax(self.action_values(state))]
+            self.action = self.actions[
+                torch.argmax(self.action_values(state)).item()]
 
         return self.action
 
@@ -132,12 +142,12 @@ class RVIQLearningBasedAgent(RLAgent):
                                             self.device)
 
             # assemble pieces for the Q update
-            with torch.no_grad():
-                proxy_rewards = rewards - self.rho * costs
-                average_reward = torch.mean(proxy_rewards) * torch.ones(self.N)
-                state_values = utils.array_to_tensor(self.state_values(states),
-                                                     self.device)
-                q_targets = proxy_rewards - average_reward + state_values
+            proxy_rewards = rewards - self.rho * costs
+            average_reward = torch.mean(proxy_rewards) * torch.ones(
+                self.N, device=self.device)
+            state_values = self.state_values(states)
+#            import pdb; pdb.set_trace()
+            q_targets = proxy_rewards - average_reward + state_values
 
             # form the loss function and take a gradient step
             q_inputs = torch.cat([states, actions], dim=1)
@@ -153,7 +163,8 @@ class RVIQLearningBasedAgent(RLAgent):
             # perform the rho update
             rho_clip_radius = np.inf if self.rho_clip_radius is None \
                     else self.rho_clip_radius
-            average_state_value = np.average(state_values)
+            average_state_value = torch.mean(
+                state_values).cpu().detach().numpy()
             self.rho += np.sign(average_state_value) * min(rho_clip_radius,
                             self.rho_lr * abs(average_state_value))
 

@@ -9,6 +9,7 @@ from datetime import datetime
 from shutil import copyfile
 from typing import List, Tuple
 from gym import spaces
+import matplotlib.pyplot as plt
 
 
 ########## Less important functions for use in testing ##########
@@ -40,17 +41,31 @@ def two_layer_net(input_dim, output_dim,
 import main.core.portfolio as portfolio
 import main.core.asset as asset
 
-def two_asset_portfolio(
-                     init_price1, mean_return1, stdev_return1,
-                     init_price2, mean_return2, stdev_return2,
-                     init_weight1, init_principal):
-    """Return a simple two-asset portfolio."""
+def make_portfolio(init_prices,
+                   mean_returns,
+                   stdev_returns,
+                   init_weights,
+                   init_principal):
+    """
+    Take lists of asset parameters, then return a corresponding portfolio.
+    """
 
-    return portfolio.Portfolio(
-       [asset.Asset(init_price1, mean_return1, stdev_return1),
-       asset.Asset(init_price2, mean_return2, stdev_return2)],
-       [init_weight1, 1 - init_weight1],
-       init_principal)
+    asset_params = zip(init_prices, mean_returns, stdev_returns)
+    assets = [asset.Asset(*param) for param in asset_params]
+    return portfolio.Portfolio(assets, init_weights, init_principal)
+
+
+def plot_average_fig(pickle_name, plot_filename):
+    """
+    Read in pickle files (all with the same name) from all
+    subdirectories in the current directory containing lists of returns
+    and plot their average.
+    """
+
+    for _, _, files in os.walk('.'):
+        returns = [load_object(file) for file in file if file == pickle_name]
+
+    
 
 
 ########## Important functions ##########
