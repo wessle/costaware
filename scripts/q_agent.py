@@ -22,6 +22,7 @@ if __name__ == '__main__':
     # experiment parameters
     algorithm_name = config['algorithm_name']
     env_name = config['env_name']
+    env_target_return = config['env_target_return']
     checkpoint_interval = config['checkpoint_interval']
     log_dir = config['log_dir']
     num_episodes = config['num_episodes']
@@ -47,7 +48,7 @@ if __name__ == '__main__':
     if env_name == 'Sharpe':
         env = env_builder(portfolio)
     else:
-        env = env_builder(portfolio, np.mean(mean_returns))
+        env = env_builder(portfolio, env_target_return)
     env.reset()
 
 
@@ -59,7 +60,10 @@ if __name__ == '__main__':
     discretization_steps = config['discretization_steps']
     q_lr = config['q_lr']
     rho_lr = config['rho_lr']
+    mu_lr = config['mu_lr']
     eps = config['eps']
+    rho_init = config['rho_init']
+    mu_init = config['mu_init']
     enable_cuda = config['enable_cuda']
     grad_clip_radius = config['grad_clip_radius']
     rho_clip_radius = config['rho_clip_radius']
@@ -72,6 +76,8 @@ if __name__ == '__main__':
         Q, q_lr, rho_lr,
         eps=eps,
         enable_cuda=enable_cuda,
+        rho_init=rho_init,
+        mu_init=mu_init,
         grad_clip_radius=grad_clip_radius,
         rho_clip_radius=rho_clip_radius)
 
@@ -89,11 +95,12 @@ if __name__ == '__main__':
             state, reward_cost_tuple, proceed, _  = env.step(action)
             agent.update(reward_cost_tuple, state)
         end_values.append(env.state[0])
-        print('Episode {:<6} | ${:>15.2f} | {:.2f}s | {}'.format(i,
-                                                        env.state[0],
-                                                        time() - t0,
-                                                        average_action.round(
-                                                            decimals=2)))
+        print('Episode {:<6} | ${:>10.2f} | {:.2f}s | {} | {:.4f} | {:.2f}'.format(
+            i, env.state[0], time() - t0, average_action.round(decimals=2),
+            agent.rho, agent.state_value(torch.FloatTensor(env.state))))
+
+        import pdb; pdb.set_trace()
+
         env.reset()
 
         if i + 1 % checkpoint_interval == 0:

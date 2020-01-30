@@ -3,13 +3,13 @@ import main.core.envs as envs
 import main.core.portfolio as portfolio
 import main.core.asset as asset
 
-SIM_LEN = 1000
+SIM_LEN = 253
 
-env = envs.SortinoCostAwareEnv(
+env = envs.OmegaCostAwareEnv(
     portfolio.Portfolio(
         [
-            asset.Asset(1., 0.05, 0.1),
-            asset.Asset(1., 0.025, 0.)
+            asset.Asset(1., 0.0005, 0.0001),
+            asset.Asset(1., 0.00025, 0.)
         ], 
         [0.5, 0.5], 
         1000.

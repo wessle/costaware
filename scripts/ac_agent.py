@@ -21,6 +21,7 @@ if __name__ == '__main__':
     # experiment parameters
     algorithm_name = config['algorithm_name']
     env_name = config['env_name']
+    env_target_return = config['env_target_return']
     checkpoint_interval = config['checkpoint_interval']
     log_dir = config['log_dir']
     num_episodes = config['num_episodes']
@@ -47,7 +48,7 @@ if __name__ == '__main__':
     if env_name == 'Sharpe':
         env = env_builder(portfolio)
     else:
-        env = env_builder(portfolio, np.mean(mean_returns))
+        env = env_builder(portfolio, env_target_return)
     env.reset()
 
 
@@ -60,6 +61,9 @@ if __name__ == '__main__':
     batchsize = config['batchsize']
     policy_lr = config['policy_lr']
     v_lr = config['v_lr']
+    init_mu_r = config['init_mu_r']
+    init_mu_c = config['init_mu_c']
+    mu_lr = config['mu_lr']
     enable_cuda = config['enable_cuda']
     grad_clip_radius = config['grad_clip_radius']
     policy_hidden_units = config['policy_hidden_units']
@@ -80,6 +84,7 @@ if __name__ == '__main__':
     agent = agents.ACAgent(buffer_maxlen, batchsize,
                            policy, v,
                            policy_lr, v_lr,
+                           init_mu_r, init_mu_c, mu_lr,
                            enable_cuda=enable_cuda,
                            grad_clip_radius=grad_clip_radius)
 

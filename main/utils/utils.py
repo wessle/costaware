@@ -32,9 +32,9 @@ def two_layer_net(input_dim, output_dim,
     """
     net = torch.nn.Sequential(
         torch.nn.Linear(input_dim, hidden_layer1_size),
-        torch.nn.ReLU(),
+        torch.nn.Tanh(),
         torch.nn.Linear(hidden_layer1_size, hidden_layer2_size),
-        torch.nn.ReLU(),
+        torch.nn.Tanh(),
         torch.nn.Linear(hidden_layer2_size, output_dim))
     return net
 

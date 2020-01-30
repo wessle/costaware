@@ -44,9 +44,11 @@ class RVIQLearningBasedAgent(RLAgent):
     """
 
     def __init__(self, buffer_maxlen, batchsize, actions,
-                 q_network, q_lr, rho_lr,
+                 q_network,
+                 q_lr, rho_lr, mu_lr=0.005,
                  eps=0.1, enable_cuda=True, optimizer=torch.optim.Adam,
-                 grad_clip_radius=None, rho_init=0.0, rho_clip_radius=None):
+                 grad_clip_radius=None,
+                 rho_init=0.0, mu_init=0.0, rho_clip_radius=None):
 
         self.buffer = utils.Buffer(buffer_maxlen)
         self.N = batchsize
@@ -62,9 +64,12 @@ class RVIQLearningBasedAgent(RLAgent):
 
         self.q_optim = optimizer(self.q.parameters(), lr=q_lr)
         self.rho_lr = rho_lr
+        self.mu_lr = mu_lr
         self.grad_clip_radius = grad_clip_radius
         self.rho = rho_init
-        self.rho_clip_radius = rho_clip_radius
+        self.mu = 0
+        self.rho_clip_radius = np.inf if rho_clip_radius is None \
+            else rho_clip_radius
 
         self.state = None
         self.action = None
@@ -79,11 +84,6 @@ class RVIQLearningBasedAgent(RLAgent):
             values = self.q(torch.cat([
                 state.repeat(self.torch_actions.size()[0], 1),
                 self.torch_actions], axis=1))
-
-#        with torch.no_grad():
-#            state = utils.array_to_tensor(state, self.device)
-#            values = [self.q(torch.cat([state, action])).item()
-#                      for action in self.torch_actions]
         return values
 
     def state_value(self, state):
@@ -136,6 +136,10 @@ class RVIQLearningBasedAgent(RLAgent):
         new_sample = (self.state, self.action, reward_cost_tuple, next_state)
         self.buffer.add(new_sample)
 
+        reward, cost = reward_cost_tuple
+        self.mu = self.mu_lr * (reward - self.rho * cost) + \
+                (1 - self.mu_lr) * self.mu
+
         if len(self.buffer) >= self.N:
             states, actions, rewards, costs, next_states = \
                     utils.arrays_to_tensors(self.buffer.sample_batch(self.N),
@@ -143,15 +147,14 @@ class RVIQLearningBasedAgent(RLAgent):
 
             # assemble pieces for the Q update
             proxy_rewards = rewards - self.rho * costs
-            average_reward = torch.mean(proxy_rewards) * torch.ones(
-                self.N, device=self.device)
-            state_values = self.state_values(states)
-#            import pdb; pdb.set_trace()
-            q_targets = proxy_rewards - average_reward + state_values
+            average_reward = self.mu * torch.ones(self.N, device=self.device)
+            next_state_values = self.state_values(next_states)
+            q_targets = proxy_rewards - average_reward + next_state_values
 
             # form the loss function and take a gradient step
             q_inputs = torch.cat([states, actions], dim=1)
             q_estimates = self.q(q_inputs)
+
             loss = self.q_loss(q_targets.unsqueeze(dim=1), q_estimates)
             self.q_optim.zero_grad()
             loss.backward()
@@ -161,12 +164,8 @@ class RVIQLearningBasedAgent(RLAgent):
             self.q_optim.step()
 
             # perform the rho update
-            rho_clip_radius = np.inf if self.rho_clip_radius is None \
-                    else self.rho_clip_radius
-            average_state_value = torch.mean(
-                state_values).cpu().detach().numpy()
-            self.rho += np.sign(average_state_value) * min(rho_clip_radius,
-                            self.rho_lr * abs(average_state_value))
+            self.rho += np.sign(self.mu) * min(
+                self.rho_clip_radius, self.rho_lr * abs(self.mu)) 
 
     def save_models(self, filename):
         """Save Q function, optimizer, rho estimate."""
@@ -203,11 +202,12 @@ class ACAgent(RLAgent):
     def __init__(self, buffer_maxlen, batchsize,
                  policy_network, v_network,
                  policy_lr, v_lr,
+                 init_mu_r=0, init_mu_c=0, mu_lr=0.005,
                  enable_cuda=True,
                  policy_optimizer=torch.optim.Adam,
                  v_optimizer=torch.optim.Adam,
                  grad_clip_radius=None,
-                 reward_cost_mean_floor=0.01):
+                 reward_cost_mean_floor=1e-8):
 
         self.buffer = utils.Buffer(buffer_maxlen)
         self.N = batchsize
@@ -220,6 +220,9 @@ class ACAgent(RLAgent):
         self.cv_optim = v_optimizer(self.cv.parameters(), lr=v_lr)
         self.cv_loss = torch.nn.MSELoss()
         self.grad_clip_radius = grad_clip_radius
+        self.mu_r = init_mu_r
+        self.mu_c = init_mu_c
+        self.mu_lr = mu_lr
 
         self.__enable_cuda = enable_cuda
         self.enable_cuda(self.__enable_cuda, warn=False)
@@ -262,6 +265,9 @@ class ACAgent(RLAgent):
     def _mean_floor(self, val):
         return torch.clamp(val, self.reward_cost_mean_floor, np.inf)
 
+    def away_from_zero(self, val):
+        return np.sign(val) * max(self.reward_cost_mean_floor, abs(val))
+
     def update(self, reward_cost_tuple, next_state):
         """Perform the update step."""
 
@@ -269,6 +275,10 @@ class ACAgent(RLAgent):
 
         new_sample = (self.state, self.action, reward_cost_tuple, next_state)
         self.buffer.add(new_sample)
+
+        reward, cost = reward_cost_tuple
+        self.mu_r = self.mu_lr * reward + (1 - self.mu_lr) * self.mu_r
+        self.mu_c = self.mu_lr * cost + (1 - self.mu_lr) * self.mu_c
 
         if len(self.buffer) >= self.N:
             # actions are not needed for these updates, so ignore them
@@ -281,13 +291,13 @@ class ACAgent(RLAgent):
 
             # assemble pieces needed for policy and value function updates
             # TODO: make better use of torch.no_grad() to improve memory efficiency
-            r_mean = self._mean_floor(rewards.mean())
+            r_mean = self.away_from_zero(self.mu_r)
             r_next_state_vals = self.rv(next_states)
             r_targets = rewards - r_mean*torch.ones(self.N, 1, device=self.device) \
                     + r_next_state_vals
             r_state_vals = self.rv(states)
 
-            c_mean = self._mean_floor(costs.mean())
+            c_mean = self.away_from_zero(self.mu_c)
             c_next_state_vals = self.cv(next_states)
             c_targets = costs - c_mean*torch.ones(self.N, 1, device=self.device) \
                     + c_next_state_vals
@@ -316,7 +326,10 @@ class ACAgent(RLAgent):
                 c_td_err = (c_targets - c_state_vals)
                 err_vector = ((r_mean/c_mean)*(
                     r_td_err/r_mean - c_td_err/c_mean)).squeeze()
+#                err_vector = torch.sign(err_vector)
             _, log_pis = self.pi.sample(states)
+
+#            import pdb; pdb.set_trace()
 
             pi_loss = -err_vector.dot(log_pis)
             self.pi_optim.zero_grad()
