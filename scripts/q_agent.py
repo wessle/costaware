@@ -45,7 +45,7 @@ if __name__ == '__main__':
                                      init_principal)
 
     env_builder = eval('envs.' + env_name + 'CostAwareEnv')
-    if env_name == 'Sharpe':
+    if 'Sharpe' in env_name:
         env = env_builder(portfolio)
     else:
         env = env_builder(portfolio, env_target_return)
@@ -96,10 +96,10 @@ if __name__ == '__main__':
             agent.update(reward_cost_tuple, state)
         end_values.append(env.state[0])
         print('Episode {:<6} | ${:>10.2f} | {:.2f}s | {} | {:.4f} | {:.2f}'.format(
-            i, env.state[0], time() - t0, average_action.round(decimals=2),
+            i, env.portfolio.value, time() - t0, average_action.round(decimals=2),
             agent.rho, agent.state_value(torch.FloatTensor(env.state))))
 
-        import pdb; pdb.set_trace()
+#        import pdb; pdb.set_trace()
 
         env.reset()
 

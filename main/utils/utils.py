@@ -45,13 +45,14 @@ def make_portfolio(init_prices,
                    mean_returns,
                    stdev_returns,
                    init_weights,
-                   init_principal):
+                   init_principal,
+                   asset_class='SimpleAsset'):
     """
     Take lists of asset parameters, then return a corresponding portfolio.
     """
 
     asset_params = zip(init_prices, mean_returns, stdev_returns)
-    assets = [asset.Asset(*param) for param in asset_params]
+    assets = [eval('asset.' + asset_class)(*param) for param in asset_params]
     return portfolio.Portfolio(assets, init_weights, init_principal)
 
 

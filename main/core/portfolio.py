@@ -54,14 +54,17 @@ class Portfolio:
             asset.reset()
 
         self.__value = self.__principal
-        self.__shares = [weight * self.value / asset.price for asset, weight in zip(self.assets, self.weights)]
+        self.__shares = [weight * self.value / asset.price 
+                         for asset, weight in zip(self.assets, self.weights)]
 
     def step(self) -> Tuple[float, List['Asset'], List[float]]:
         """
         """
         _             = [asset.step() for asset in self.assets]
-        self.__value  = sum(num_shares * asset.price for num_shares, asset in zip(self.shares, self.assets))
-        self.__shares = [weight * self.value / asset.price for asset, weight in zip(self.assets, self.weights)]
+        self.__value  = sum(num_shares * asset.price
+                            for num_shares, asset in zip(self.shares, self.assets))
+        self.__shares = [weight * self.value / asset.price
+                         for asset, weight in zip(self.assets, self.weights)]
 
         return self.summary
 

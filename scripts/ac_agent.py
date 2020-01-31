@@ -45,7 +45,7 @@ if __name__ == '__main__':
                                      init_principal)
 
     env_builder = eval('envs.' + env_name + 'CostAwareEnv')
-    if env_name == 'Sharpe':
+    if 'Sharpe' in env_name:
         env = env_builder(portfolio)
     else:
         env = env_builder(portfolio, env_target_return)

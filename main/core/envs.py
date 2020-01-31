@@ -61,33 +61,29 @@ class CostAwareEnv(gym.Env):
 
     def _observation_space(self):
         """
-        The observation space for the environment is a 1-dimensional numpy array
-        whose length depends on the size of the portfolio specified for the
-        environment.
-
-        Each asset in the portfolio has four characteristics:
-            - price (lower bound = 0)
-            - momentum (lower bound = 0)
-            - lower bollinger band (lower bound = -oo)
-            - upper bollinger band (lower bound = -oo)
-        The overall portfolio has two additional characteristics:
-            - value (lower bound = 0)
-            - shares (lower bound = 0)
-        The structure of the observation space is a type of Box space. The order
-        is asserted to be
+        Elements in the environment's observation space are flat numpy arrays.
+        The number of elements in the array depends on the number of assets in
+        the portfolio and the number of statistics being kept track of within
+        each asset, as follows:
             [
                 value, asset 1 share, asset 2 share, ... , asset n share, 
-                asset 1 price, asset 1 momentum, asset 1 lower bb, asset 1 upper bb,
-                asset 2 price, asset 2 momentum, asset 2 lower bb, asset 2 upper bb,
+                asset 1 statistic 1, ..., asset 1 statistic k,
                 ... ,
-                asset n price, asset n momentum, asset n lower bb, asset n upper bb,
+                asset n statistic 1, ..., asset n statistic k
             ]
+        
+        The upper bounds on all the statistics is infinity, while the lower
+        bounds for a given asset are returned by asset.lower_bounds.
         """
-        size = 1 + len(self.portfolio) + 4 * len(self.portfolio)
+
+        num_assets = len(self.portfolio)
+        num_asset_statistics = len(self.portfolio.assets[0])
+        size = 1 + num_assets + num_asset_statistics * num_assets
         upper_bounds = np.inf * np.ones(size)
-        lower_bounds = np.zeros(size)
-        lower_bounds[3+len(self.portfolio)::4] = -np.inf
-        lower_bounds[4+len(self.portfolio)::4] = -np.inf
+        lower_bounds = (1 + num_assets)*[0]
+        for asset in self.portfolio.assets:
+            lower_bounds += asset.lower_bounds
+        lower_bounds = np.array(lower_bounds)
 
         return spaces.Box(low=lower_bounds, high=upper_bounds, dtype=np.float64)
 
@@ -158,6 +154,17 @@ class SharpeCostAwareEnv(CostAwareEnv):
 
     def _update_reward_and_cost(self, portfolio_returns):
         self.reward, self.cost = self.estimator(portfolio_returns)
+
+
+class RevisedSharpeCostAwareEnv(SharpeCostAwareEnv):
+
+    def __init__(self, portfolio):
+        super().__init__(portfolio)
+
+    def _update_reward_and_cost(self, portfolio_returns):
+        mean_estimate, _ = self.estimator(portfolio_returns)
+        self.reward = portfolio_returns
+        self.cost = (self.reward - mean_estimate)**2
 
 
 class OmegaCostAwareEnv(CostAwareEnv):
