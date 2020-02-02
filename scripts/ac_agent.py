@@ -94,19 +94,17 @@ if __name__ == '__main__':
 
     end_values = []
     for i in range(num_episodes):
+        average_action = np.zeros(action_dim)
         t0 = time()
-        average_action = (1/action_dim)*np.ones(action_dim)
         for _ in range(episode_len):
             action = agent.sample_action(env.state)
-            average_action = np.mean([average_action, action], axis=0)
+            average_action += action
             state, reward_cost_tuple, proceed, _  = env.step(action)
             agent.update(reward_cost_tuple, state)
         end_values.append(env.state[0])
-        print('Episode {:<6} | ${:>15.2f} | {:.2f}s | {}'.format(i,
-                                                        env.state[0],
-                                                        time() - t0,
-                                                        average_action.round(
-                                                            decimals=2)))
+        print('Episode {:<6} | ${:>15.2f} | {:.2f}s | {}'.format(
+            i, env.state[0],time() - t0,
+            (average_action / episode_len).round(decimals=2)))
         print(agent.pi.forward(
             torch.FloatTensor(env.state).to(agent.device)).cpu().detach().numpy())
         env.reset()

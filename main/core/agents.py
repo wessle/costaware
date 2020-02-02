@@ -45,10 +45,10 @@ class RVIQLearningBasedAgent(RLAgent):
 
     def __init__(self, buffer_maxlen, batchsize, actions,
                  q_network,
-                 q_lr, rho_lr, mu_lr=0.005,
+                 q_lr, rho_lr,
                  eps=0.1, enable_cuda=True, optimizer=torch.optim.Adam,
                  grad_clip_radius=None,
-                 rho_init=0.0, mu_init=0.0, rho_clip_radius=None):
+                 rho_init=0.0, rho_clip_radius=None):
 
         self.buffer = utils.Buffer(buffer_maxlen)
         self.N = batchsize
@@ -64,15 +64,19 @@ class RVIQLearningBasedAgent(RLAgent):
 
         self.q_optim = optimizer(self.q.parameters(), lr=q_lr)
         self.rho_lr = rho_lr
-        self.mu_lr = mu_lr
         self.grad_clip_radius = grad_clip_radius
         self.rho = rho_init
-        self.mu = 0
         self.rho_clip_radius = np.inf if rho_clip_radius is None \
             else rho_clip_radius
 
         self.state = None
         self.action = None
+        self.ref_state = None
+
+    def set_reference_state(self, state):
+        """Set the reference state to be used in updates."""
+
+        self.ref_state = utils.array_to_tensor(state, self.device)
 
     def action_values(self, state):
         """
@@ -97,6 +101,10 @@ class RVIQLearningBasedAgent(RLAgent):
         return torch.FloatTensor(
             [self.state_value(state) for state in states]).to(self.device)
 
+    def ref_state_val(self):
+
+        return self.state_value(self.ref_state)
+
     def sample_action(self, state):
         """
         Sample an action epsilon-greedily.
@@ -106,11 +114,14 @@ class RVIQLearningBasedAgent(RLAgent):
 
         self.state = state
         state = utils.array_to_tensor(state, self.device)
+        greedy_index = torch.argmax(self.action_values(state)).item()
         if np.random.uniform() < self.eps:
-            self.action = self.actions[np.random.randint(len(self.actions))]
+            random_index = np.random.randint(len(self.actions))
+            while random_index == greedy_index:
+                random_index = np.random.randint(len(self.actions))
+            self.action = self.actions[random_index]
         else:
-            self.action = self.actions[
-                torch.argmax(self.action_values(state)).item()]
+            self.action = self.actions[greedy_index]
 
         return self.action
 
@@ -136,10 +147,6 @@ class RVIQLearningBasedAgent(RLAgent):
         new_sample = (self.state, self.action, reward_cost_tuple, next_state)
         self.buffer.add(new_sample)
 
-        reward, cost = reward_cost_tuple
-        self.mu = self.mu_lr * (reward - self.rho * cost) + \
-                (1 - self.mu_lr) * self.mu
-
         if len(self.buffer) >= self.N:
             states, actions, rewards, costs, next_states = \
                     utils.arrays_to_tensors(self.buffer.sample_batch(self.N),
@@ -147,7 +154,8 @@ class RVIQLearningBasedAgent(RLAgent):
 
             # assemble pieces for the Q update
             proxy_rewards = rewards - self.rho * costs
-            average_reward = self.mu * torch.ones(self.N, device=self.device)
+            average_reward = self.ref_state_val() * torch.ones(
+                self.N, device=self.device)
             next_state_values = self.state_values(next_states)
             q_targets = proxy_rewards - average_reward + next_state_values
 
@@ -164,8 +172,8 @@ class RVIQLearningBasedAgent(RLAgent):
             self.q_optim.step()
 
             # perform the rho update
-            self.rho += np.sign(self.mu) * min(
-                self.rho_clip_radius, self.rho_lr * abs(self.mu)) 
+            self.rho += np.sign(self.ref_state_val()) * min(
+                self.rho_clip_radius, self.rho_lr * abs(self.ref_state_val())) 
 
     def save_models(self, filename):
         """Save Q function, optimizer, rho estimate."""

@@ -191,6 +191,47 @@ class OmegaCostAwareEnv(CostAwareEnv):
         self.reward = np.trapz(1. - cdf(right_tail), right_tail)
 
 
+class RevisedOmegaCostAwareEnv(OmegaCostAwareEnv):
+
+    def __init__(self, portfolio):
+        super().__init__(portfolio)
+        
+        self.__numerator_estimate = None
+        self.__denominator_estimate = None
+        self.__omega_estimate = None
+
+    def _update_reward_and_cost(self, portfolio_returns):
+        _ = self.ecdf_estimate(portfolio_returns)
+        self.reward = max(0, portfolio_returns - self.theta)
+        self.cost = max(0, self.theta - portfolio_returns)
+
+    @property
+    def numerator_estimate(self):
+        return self.__numerator_estimate
+
+    @property
+    def denominator_estimate(self):
+        return self.__denominator_estimate
+
+    @property
+    def omega_estimate(self):
+        cdf = self.ecdf_estimator(self.theta)
+
+        # bounds for the integration
+        lower, upper = self.ecdf_estimator.lower, self.ecdf_estimator.upper
+        lower -= 1e-1
+        upper += 1e-1
+
+        left_tail = np.linspace(lower, self.theta) if lower < self.theta else np.zeros(1)
+        right_tail = np.linspace(self.theta, upper) if upper > self.theta else np.zeros(1)
+
+        self.__numerator_estimate = np.trapz(1. - cdf(right_tail), right_tail)
+        self.__denominator_estimate = np.trapz(cdf(left_tail), left_tail)
+        self.__omega_estimate = self.__numerator_estimate / self.__denominator_estimate
+
+        return self.__omega_estimate
+
+
 class SortinoCostAwareEnv(CostAwareEnv):
     def __init__(self, portfolio, threshold):
         self.threshold = threshold

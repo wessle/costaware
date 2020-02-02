@@ -60,10 +60,8 @@ if __name__ == '__main__':
     discretization_steps = config['discretization_steps']
     q_lr = config['q_lr']
     rho_lr = config['rho_lr']
-    mu_lr = config['mu_lr']
     eps = config['eps']
     rho_init = config['rho_init']
-    mu_init = config['mu_init']
     enable_cuda = config['enable_cuda']
     grad_clip_radius = config['grad_clip_radius']
     rho_clip_radius = config['rho_clip_radius']
@@ -77,27 +75,28 @@ if __name__ == '__main__':
         eps=eps,
         enable_cuda=enable_cuda,
         rho_init=rho_init,
-        mu_init=mu_init,
         grad_clip_radius=grad_clip_radius,
         rho_clip_radius=rho_clip_radius)
 
     if loading_checkpoint:
         agent.load_models(checkpoint_filename)
 
+    agent.set_reference_state(env.state)
 
     end_values = []
     for i in range(num_episodes):
+        average_action = np.zeros(action_dim)
         t0 = time()
-        average_action = (1/action_dim)*np.ones(action_dim)
         for _ in range(episode_len):
             action = agent.sample_action(env.state)
-            average_action = np.mean([average_action, action], axis=0)
+            average_action += action
             state, reward_cost_tuple, proceed, _  = env.step(action)
             agent.update(reward_cost_tuple, state)
         end_values.append(env.state[0])
-        print('Episode {:<6} | ${:>10.2f} | {:.2f}s | {} | {:.4f} | {:.2f}'.format(
-            i, env.portfolio.value, time() - t0, average_action.round(decimals=2),
-            agent.rho, agent.state_value(torch.FloatTensor(env.state))))
+        print('Episode {:<6} | ${:>10.2f} | {:.2f}s | {} | {:.4f} | {:.8f}'.format(
+            i, env.portfolio.value, time() - t0,
+            (average_action / episode_len).round(decimals=2),
+            agent.rho, agent.ref_state_val()))
 
 #        import pdb; pdb.set_trace()
 

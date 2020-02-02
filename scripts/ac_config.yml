@@ -2,8 +2,8 @@
 init_prices: [1, 1, 1]
 # mean_returns: [0.00024, 0.00005, -0.00015] # annual 6%, 2%, -4%
 # stdev_returns: [0.0001, 0.0000, 0.0001]
-mean_returns: [-0.005, 0.000, 0.005] # annual 6%
-stdev_returns: [0.000, 0.000, 0.000]
+mean_returns: [-0.0005, 0.0005] # annual 6%, 2%, -4%
+stdev_returns: [0.0000, 0.0000]
 init_weights: [0.34, 0.33, 0.33]
 init_principal: 1000
 
@@ -13,8 +13,8 @@ buffer_maxlen: 100000
 batchsize: 64
 min_alpha: 0.01
 max_alpha: 10
-policy_lr: 0.005
-v_lr: 0.01
+policy_lr: 0.001
+v_lr: 0.001
 init_mu_r: 0
 init_mu_c: 0
 mu_lr: 0.01
@@ -26,7 +26,7 @@ v_hidden_units: 64
 
 # experiment parameters
 algorithm_name: 'AC'
-env_name: 'Omega' # 'Sharpe' 'Omega' 'Sortino'
+env_name: 'RevisedSharpe' # 'Sharpe' 'Omega' 'Sortino'
 env_target_return: 0.000
 num_episodes: 2000
 episode_len: 253 # trading days in a year
