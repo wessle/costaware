@@ -75,10 +75,12 @@ class TabularQLearner:
 
         return self.action
 
-    def update(self, reward, cost, next_state):
+    def update(self, reward_cost_tuple, next_state):
         """Perform the update step."""
 
         assert self.state is not None, "sample_action must be called first"
+
+        reward, cost = reward_cost_tuple
 
         td_err = reward - self.rho * cost + self.V(next_state) \
                 - self.ref_state_val() - self.Q(self.state, self.action)

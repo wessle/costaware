@@ -1,4 +1,5 @@
 import gym
+import numpy as np
 
 class MDPEnv(gym.Env):
     """
@@ -25,7 +26,8 @@ class MDPEnv(gym.Env):
         self.transition_probabilities = transition_probabilities
 
         self.observation_space = gym.spaces.Discrete(len(states))
-        self.action_space      = gym.spaces.Discrete(len(actions[states[0]]))
+#        self.action_space      = gym.spaces.Discrete(len(actions[states[0]]))
+        self.action_space      = gym.spaces.Discrete(len(actions))
 
 
     def step(self, action):
