@@ -6,32 +6,33 @@ import simple_test.agents as agents
 import simple_test.mdp_env as mdp_env
 
 
-num_states = 20
-num_actions = 20
+num_states = 10
+num_actions = 10
 q_lr = 0.01
-rho_lr = 0.001
+rho_lr = 0.005
 rho_init = 0
 eps = 0.05
 seed = 1994
 
-num_steps = 10000000
+num_steps = 5000000
 print_interval = 10000
 make_plot = True
+plot_name = 'q_test.png'
 
 if __name__ == '__main__':
 
     np.random.seed(seed)
 
-    # set up the MDP
-
     states = list(range(num_states))
     actions = list(range(num_actions))
 
     def r(s,a):
-        return s*a
+        # return s*a
+        return s**2
 
     def c(s,a):
-        return 1 / max(1, s*a)
+        # return 1 / max(1, s*a)
+        return max(1, a**2)
 
     probs = {}
     for elem in product(states, actions):
@@ -61,4 +62,4 @@ if __name__ == '__main__':
         plt.plot(np.arange(num_steps), np.array(ratios))
         plt.xlabel('Step')
         plt.ylabel('Ratio')
-        plt.savefig('test.png')
+        plt.savefig(plot_name)
