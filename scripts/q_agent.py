@@ -16,8 +16,11 @@ if __name__ == '__main__':
     config_path = 'q_config.yml'
     config = utils.load_config(config_path)
 
-    # Set the number of threads pytorch can use
+    # Set the number of threads pytorch can use, seed RNGs
     torch.set_num_threads(config['num_threads'])
+    if config['seed'] is not None:
+        torch.manual_seed(config['seed'])
+        np.random.seed(config['seed'])
 
     # experiment parameters
     algorithm_name = config['algorithm_name']
@@ -81,10 +84,12 @@ if __name__ == '__main__':
     if loading_checkpoint:
         agent.load_models(checkpoint_filename)
 
+    # set reference state to be used in updates
     agent.set_reference_state(env.state)
 
     end_values = []
-    for i in range(num_episodes):
+    rhos = []
+    for i in range(1, num_episodes+1):
         average_action = np.zeros(action_dim)
         t0 = time()
         for _ in range(episode_len):
@@ -92,7 +97,8 @@ if __name__ == '__main__':
             average_action += action
             state, reward_cost_tuple, proceed, _  = env.step(action)
             agent.update(reward_cost_tuple, state)
-        end_values.append(env.state[0])
+        end_values.append(env.portfolio.value)
+        rhos.append(agent.rho)
         print('Episode {:<6} | ${:>10.2f} | {:.2f}s | {} | {:.4f} | {:.8f}'.format(
             i, env.portfolio.value, time() - t0,
             (average_action / episode_len).round(decimals=2),
@@ -100,11 +106,13 @@ if __name__ == '__main__':
 
 #        import pdb; pdb.set_trace()
 
+
         env.reset()
 
-        if i + 1 % checkpoint_interval == 0:
+        if i % checkpoint_interval == 0:
             agent.save_models(os.path.join(experiment_dir, 'models.pt'))
-            utils.save_object(end_values, os.path.join(experiment_dir, 'end_values.pkl'))
+            np.save(os.path.join(experiment_dir, 'end_values.npy'), end_values)
+            np.save(os.path.join(experiment_dir, 'rhos.npy'), rhos)
 
 
 

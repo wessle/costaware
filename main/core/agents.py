@@ -172,8 +172,9 @@ class RVIQLearningBasedAgent(RLAgent):
             self.q_optim.step()
 
             # perform the rho update
-            self.rho += np.sign(self.ref_state_val()) * min(
-                self.rho_clip_radius, self.rho_lr * abs(self.ref_state_val())) 
+            ref_state_val = self.ref_state_val().item()
+            self.rho += np.sign(ref_state_val) * min(
+                self.rho_clip_radius, self.rho_lr * abs(ref_state_val))
 
     def save_models(self, filename):
         """Save Q function, optimizer, rho estimate."""
@@ -274,7 +275,7 @@ class ACAgent(RLAgent):
         return torch.clamp(val, self.reward_cost_mean_floor, np.inf)
 
     def away_from_zero(self, val):
-        return np.sign(val) * max(self.reward_cost_mean_floor, abs(val))
+        return torch.sign(val) * max(self.reward_cost_mean_floor, torch.abs(val))
 
     def update(self, reward_cost_tuple, next_state):
         """Perform the update step."""
@@ -284,6 +285,8 @@ class ACAgent(RLAgent):
         new_sample = (self.state, self.action, reward_cost_tuple, next_state)
         self.buffer.add(new_sample)
 
+        # NOTE: the mu values below are not being used at the moment,
+        # but I'm keeping them around just in case
         reward, cost = reward_cost_tuple
         self.mu_r = self.mu_lr * reward + (1 - self.mu_lr) * self.mu_r
         self.mu_c = self.mu_lr * cost + (1 - self.mu_lr) * self.mu_c
@@ -299,13 +302,13 @@ class ACAgent(RLAgent):
 
             # assemble pieces needed for policy and value function updates
             # TODO: make better use of torch.no_grad() to improve memory efficiency
-            r_mean = self.away_from_zero(self.mu_r)
+            r_mean = self.away_from_zero(self.rv(states).mean())
             r_next_state_vals = self.rv(next_states)
             r_targets = rewards - r_mean*torch.ones(self.N, 1, device=self.device) \
                     + r_next_state_vals
             r_state_vals = self.rv(states)
 
-            c_mean = self.away_from_zero(self.mu_c)
+            c_mean = self.away_from_zero(self.cv(states).mean())
             c_next_state_vals = self.cv(next_states)
             c_targets = costs - c_mean*torch.ones(self.N, 1, device=self.device) \
                     + c_next_state_vals
@@ -334,7 +337,6 @@ class ACAgent(RLAgent):
                 c_td_err = (c_targets - c_state_vals)
                 err_vector = ((r_mean/c_mean)*(
                     r_td_err/r_mean - c_td_err/c_mean)).squeeze()
-#                err_vector = torch.sign(err_vector)
             _, log_pis = self.pi.sample(states)
 
 #            import pdb; pdb.set_trace()

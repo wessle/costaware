@@ -18,6 +18,12 @@ if __name__ == '__main__':
 
     config = utils.load_config(config_path)
 
+    # Set the number of threads pytorch can use, seed RNGs
+    torch.set_num_threads(config['num_threads'])
+    if config['seed'] is not None:
+        torch.manual_seed(config['seed'])
+        np.random.seed(config['seed'])
+
     # experiment parameters
     algorithm_name = config['algorithm_name']
     env_name = config['env_name']
@@ -105,12 +111,11 @@ if __name__ == '__main__':
         print('Episode {:<6} | ${:>15.2f} | {:.2f}s | {}'.format(
             i, env.state[0],time() - t0,
             (average_action / episode_len).round(decimals=2)))
-        print(agent.pi.forward(
-            torch.FloatTensor(env.state).to(agent.device)).cpu().detach().numpy())
         env.reset()
 
         if i + 1 % checkpoint_interval == 0:
             agent.save_models(os.path.join(experiment_dir, 'models.pt'))
-            utils.save_object(end_values, os.path.join(experiment_dir, 'end_values.pkl'))
+            np.save(os.path.join(experiment_dir, 'end_values.npy'),
+                    np.array(end_values))
 
 # end

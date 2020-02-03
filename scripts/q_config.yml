@@ -1,26 +1,29 @@
-# number of pytorch threads to allocate
+# number of pytorch threads to allocate, seed for RNGs
 num_threads: 2
+seed: null # null for no seed
 
 # asset parameters
 init_prices: [1, 1]
 # mean_returns: [0.00024, 0.00005, -0.00015] # annual 6%, 2%, -4%
 # stdev_returns: [0.0001, 0.0000, 0.0001]
-mean_returns: [-0.00015, 0.00024] # annual 6%, 2%, -4%
-stdev_returns: [0.0001, 0.0001]
+# mean_returns: [-0.00015, 0.00024] # annual 6%, 2%, -4%
+# stdev_returns: [0.0001, 0.0001]
+mean_returns: [-0.00005, 0.00024]
+stdev_returns: [0.000, 0.0001]
 init_weights: [0.5, 0.5]
 init_principal: 1000
 
 # agent parameters
 buffer_maxlen: 100000
 batchsize: 256
-discretization_steps: 2
+discretization_steps: 4
 q_lr: 0.001
 rho_lr: 0.001
 eps: 0.3
 enable_cuda: False
-rho_init: 0
+rho_init: 4
 grad_clip_radius: null # set to null for no clipping
-rho_clip_radius: null # set to null for no clipping
+rho_clip_radius: 0.5 # set to null for no clipping
 Q_hidden_units: 256
 
 
@@ -30,6 +33,6 @@ env_name: 'RevisedOmega' # 'Sharpe' 'Omega' 'Sortino'
 env_target_return: 0.0
 num_episodes: 500
 episode_len: 253 # trading days in a year
-checkpoint_interval: 10
+checkpoint_interval: 5
 loading_checkpoint: False
 log_dir: '../data/'
