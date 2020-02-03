@@ -26,15 +26,19 @@ def single_layer_net(input_dim, output_dim, hidden_layer_size=256):
 
 def two_layer_net(input_dim, output_dim,
                   hidden_layer1_size=256,
-                  hidden_layer2_size=256):
+                  hidden_layer2_size=256,
+                  activation='ReLU'):
     """
     Generate a fully-connected two-layer network for quick use.
     """
+    
+    activ = eval('torch.nn.' + activation)
+
     net = torch.nn.Sequential(
         torch.nn.Linear(input_dim, hidden_layer1_size),
-        torch.nn.ReLU(),
+        activ(),
         torch.nn.Linear(hidden_layer1_size, hidden_layer2_size),
-        torch.nn.ReLU(),
+        activ(),
         torch.nn.Linear(hidden_layer2_size, output_dim)
     )
     return net

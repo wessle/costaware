@@ -193,15 +193,15 @@ class OmegaCostAwareEnv(CostAwareEnv):
 
 class RevisedOmegaCostAwareEnv(OmegaCostAwareEnv):
 
-    def __init__(self, portfolio):
-        super().__init__(portfolio)
+    def __init__(self, portfolio, theta):
+        super().__init__(portfolio, theta)
         
         self.__numerator_estimate = None
         self.__denominator_estimate = None
         self.__omega_estimate = None
 
     def _update_reward_and_cost(self, portfolio_returns):
-        _ = self.ecdf_estimate(portfolio_returns)
+        _ = self.ecdf_estimator(portfolio_returns)
         self.reward = max(0, portfolio_returns - self.theta)
         self.cost = max(0, self.theta - portfolio_returns)
 
