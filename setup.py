@@ -9,6 +9,7 @@ setup(
         'numpy',
         'torch',
         'pyyaml',
-        'gym'
+        'gym',
+        'scipy'
     ]
 )
