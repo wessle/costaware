@@ -48,7 +48,7 @@ class MDPEnv(gym.Env):
         self.transition_probabilities = dict_to_fun(transition_probabilities)
 
         self.observation_space = gym.spaces.Discrete(len(states))
-        self.action_space      = gym.spaces.Discrete(len(actions[states[0]]))
+        self.action_space      = gym.spaces.Discrete(len(actions))
 
     def step(self, action):
         """

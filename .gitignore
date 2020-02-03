@@ -4,6 +4,7 @@ costaware.egg-info
 **.swp
 wes_console_shortcuts.py
 data/*
+simple_test/*.png
 
 !data/note.txt
 !.gitignore
