@@ -1,0 +1,22 @@
+# MDP
+num_states: 10
+num_actions: 10
+r: 'r3'
+c: 'c2'
+transition_seed: 1994 # null for random seed
+training_seed: null # null for random seed
+
+# algorithm
+q_lr: 0.01
+rho_lr: 0.0005
+rho_init: 0
+eps: 0.1
+
+# experiment
+algorithm: 'TabularQ'
+env_name: 'MDP'
+num_steps: 2000000
+print_interval: 10000
+logging: True
+log_dir: 'data'
+mc_testing: False
