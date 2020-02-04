@@ -1,0 +1,18 @@
+# MDP
+num_states: 10
+num_actions: 10
+seed: 1994
+
+# algorithm
+q_lr: 0.01
+rho_lr: 0.0001
+rho_init: 0
+eps: 0.05
+
+# experiment
+algorithm: 'TabularQ'
+env_name: 'MDP'
+num_steps: 1000000
+print_interval: 10000
+logging: True
+log_dir: 'data'

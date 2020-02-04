@@ -94,8 +94,9 @@ class TabularQAgent:
 
 ###### Actor-critic agent and associated objects
 
-# Linear function approximator with scalar output.
 class LinearApproximator:
+    """Linear function approximator with scalar output."""
+    
     def __init__(self, input_dim, initialization_cov_constant=1):
         self.input_dim = input_dim
         self.initialization_cov_constant = initialization_cov_constant
@@ -125,10 +126,10 @@ class LinearApproximator:
     
     
 class SoftmaxPolicy:
-    '''
+    """"
     Parent class for use in softmax policies with specific
     h functions.
-    '''
+    """
     
     def __init__(self, actions):
         self.actions = actions
