@@ -1,38 +1,38 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from itertools import product
 
 import simple_test.agents as agents
 import simple_test.mdp_env as mdp_env
+import main.utils.utils as utils
 
 
-num_states = 10
-num_actions = 10
-q_lr = 0.01
-rho_lr = 0.005
-rho_init = 0
-eps = 0.05
-seed = 1994
+config_path = 'q_config.yml'
 
-num_steps = 5000000
-print_interval = 10000
-make_plot = True
-plot_name = 'q_test.png'
+###### Reward and cost functions for use in testing
+
+def r(s,a):
+    # return s*a
+    return s**2
+
+def c(s,a):
+    # return 1 / max(1, s*a)
+    return max(1, a**2)
+
 
 if __name__ == '__main__':
+
+    config = utils.load_config(config_path)
+
+    # create variables for all entries in the config file
+    for k, v in config.items():
+        exec(k + '= v')
 
     np.random.seed(seed)
 
     states = list(range(num_states))
     actions = list(range(num_actions))
-
-    def r(s,a):
-        # return s*a
-        return s**2
-
-    def c(s,a):
-        # return 1 / max(1, s*a)
-        return max(1, a**2)
 
     probs = {}
     for elem in product(states, actions):
@@ -40,7 +40,6 @@ if __name__ == '__main__':
         probs[elem] = dist / np.sum(dist)
 
     def p(s,a):
-        # return list(np.ones(num_states) / num_states)
         return probs[(s,a)]
 
     env = mdp_env.MDPEnv(states, actions, p, r, c)
@@ -58,8 +57,18 @@ if __name__ == '__main__':
             print('Episode {} (rho, state, action): ({:.2f}, {}, {})'.format(
                 i, agent.rho, agent.state, agent.action))
 
-    if make_plot:
+    if logging:
+        experiment_dir = utils.create_logdir(log_dir, algorithm,
+                                             env_name, config_path)
+        np.save(os.path.join(experiment_dir, 'ratios.npy'), ratios)
         plt.plot(np.arange(num_steps), np.array(ratios))
         plt.xlabel('Step')
         plt.ylabel('Ratio')
-        plt.savefig(plot_name)
+        plt.savefig(os.path.join(experiment_dir, 'ratios.png'))
+
+
+
+
+
+
+# end
