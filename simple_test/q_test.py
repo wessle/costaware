@@ -20,6 +20,9 @@ if __name__ == '__main__':
     for k, v in config.items():
         exec(k + '= v')
 
+    experiment_dir = utils.create_logdir(log_dir, algorithm,
+                                         env_name, config_path)
+
     states = list(range(num_states))
     actions = list(range(num_actions))
 
@@ -62,30 +65,29 @@ if __name__ == '__main__':
 
         if i % print_interval == 0:
             if not mc_testing:
-                print('Episode {} (rho, state, action): ({:.2f}, {}, {})'.format(
+                print('Timestep {} (rho, state, action): ({:.2f}, {}, {})'.format(
                     i, agent.rho, agent.state, agent.action))
 
             else:
-                print('Episode {} (rho, state, action, goal): ({:.2f}, {}, {}, {:.2f})'.format(
+                print('Timestep {} (rho, state, action, goal): ({:.2f}, {}, {}, {:.2f})'.format(
                     i, agent.rho, agent.state, agent.action, time_in_goal / print_interval))
+                percentage_time_in_goal.append(time_in_goal / print_interval)
+                time_in_goal = 0
 
-        if mc_testing:
-            percentage_time_in_goal.append(time_in_goal / print_interval)
-            time_in_goal = 0
+            if logging:
+                np.save(os.path.join(experiment_dir, 'ratios.npy'), ratios)
+
+                if mc_testing:
+                    np.save(os.path.join(experiment_dir, 'percent_time_in_goal.npy'),
+                            percentage_time_in_goal)
 
     if logging:
-        experiment_dir = utils.create_logdir(log_dir, algorithm,
-                                             env_name, config_path)
-        np.save(os.path.join(experiment_dir, 'ratios.npy'), ratios)
-
-        if mc_testing:
-            np.save(os.path.join(experiment_dir, 'percent_time_in_goal.npy'),
-                    percentage_time_in_goal)
-
-        plt.plot(np.arange(num_steps), np.array(ratios))
+        plt.plot(np.arange(i), np.array(ratios))
         plt.xlabel('Step')
         plt.ylabel('Ratio')
         plt.savefig(os.path.join(experiment_dir, 'ratios.png'))
+
+
 
 
 
