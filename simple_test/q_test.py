@@ -5,20 +5,11 @@ from itertools import product
 
 import simple_test.agents as agents
 import simple_test.mdp_env as mdp_env
+import simple_test.functions as functions
 import main.utils.utils as utils
 
 
 config_path = 'q_config.yml'
-
-###### Reward and cost functions for use in testing
-
-def r(s,a):
-    # return s*a
-    return s**2
-
-def c(s,a):
-    # return 1 / max(1, s*a)
-    return max(1, a**2)
 
 
 if __name__ == '__main__':
@@ -29,10 +20,11 @@ if __name__ == '__main__':
     for k, v in config.items():
         exec(k + '= v')
 
-    np.random.seed(seed)
-
     states = list(range(num_states))
     actions = list(range(num_actions))
+
+    np.random.seed(transition_seed) if transition_seed is not None \
+        else np.random.seed()
 
     probs = {}
     for elem in product(states, actions):
@@ -42,25 +34,54 @@ if __name__ == '__main__':
     def p(s,a):
         return probs[(s,a)]
 
+    r = eval('functions.' + r)
+    c = eval('functions.' + c)
+    
+    np.random.seed(training_seed) if training_seed is not None \
+        else np.random.seed()
+
     env = mdp_env.MDPEnv(states, actions, p, r, c)
     env.reset()
     agent = agents.TabularQAgent(states, actions, q_lr, rho_lr,
                                  rho_init=rho_init, eps=eps)
 
     ratios = []
+
+    if mc_testing:
+        time_in_goal = 0
+        percentage_time_in_goal = []
+
     for i in range(1, num_steps+1):
         action = agent.sample_action(env.state)
         next_state, rc_tuple, _, _ = env.step(action)
         agent.update(rc_tuple, next_state)
         ratios.append(agent.rho)
+
+        if mc_testing:
+            time_in_goal += r(env.state, action)
+
         if i % print_interval == 0:
-            print('Episode {} (rho, state, action): ({:.2f}, {}, {})'.format(
-                i, agent.rho, agent.state, agent.action))
+            if not mc_testing:
+                print('Episode {} (rho, state, action): ({:.2f}, {}, {})'.format(
+                    i, agent.rho, agent.state, agent.action))
+
+            else:
+                print('Episode {} (rho, state, action, goal): ({:.2f}, {}, {}, {:.2f})'.format(
+                    i, agent.rho, agent.state, agent.action, time_in_goal / print_interval))
+
+        if mc_testing:
+            percentage_time_in_goal.append(time_in_goal / print_interval)
+            time_in_goal = 0
 
     if logging:
         experiment_dir = utils.create_logdir(log_dir, algorithm,
                                              env_name, config_path)
         np.save(os.path.join(experiment_dir, 'ratios.npy'), ratios)
+
+        if mc_testing:
+            np.save(os.path.join(experiment_dir, 'percent_time_in_goal.npy'),
+                    percentage_time_in_goal)
+
         plt.plot(np.arange(num_steps), np.array(ratios))
         plt.xlabel('Step')
         plt.ylabel('Ratio')
