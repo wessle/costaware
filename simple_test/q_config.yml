@@ -1,6 +1,6 @@
 # MDP
-num_states: 5
-num_actions: 5
+num_states: 20
+num_actions: 20
 r: 'r4'
 c: 'c6'
 transition_seed: 1994 # null for random seed
@@ -15,7 +15,7 @@ eps: 0.01
 # experiment
 algorithm: 'TabularQ'
 env_name: 'MDP'
-num_steps: 2000000
+num_steps: 5000000
 print_interval: 10000
 logging: True
 log_dir: 'data'

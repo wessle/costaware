@@ -1,6 +1,6 @@
 # MDP
-num_states: 5
-num_actions: 5
+num_states: 20
+num_actions: 20
 r: 'r4'
 c: 'c6'
 transition_seed: 1994 # null for random seed
@@ -18,7 +18,7 @@ grad_clip_radius: null # null for no clipping
 # experiment
 algorithm: 'LinearAC'
 env_name: 'MDP'
-num_steps: 500000
+num_steps: 2000000
 print_interval: 1000
 logging: True
 log_dir: 'data'
