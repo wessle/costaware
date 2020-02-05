@@ -1,6 +1,28 @@
 import gym
 import numpy as np
 
+
+def dict_to_fun(dictionary):
+    """
+    Wraps a function around a dictionary.
+
+    Parameters
+    ----------
+
+    dictionary: a dict
+
+    Returns
+    -------
+    f: a function
+
+    f(a,b,c,...) == X if and only if dictionary[(a,b,c,...)] == X
+    """
+    if callable(dictionary):
+        return dictionary
+    else:
+        return lambda *keys: dictionary[keys]
+
+
 class MDPEnv(gym.Env):
     """
     A Gym-compatible environment that takes fully-specified MDPs.
@@ -11,24 +33,22 @@ class MDPEnv(gym.Env):
         Parameters
         ----------
         states:                   a list of states 
-        actions:                  a list of actions
-        transition_probabilities: a function that returns a state distribution
+        actions:                  a list of actions (*descriptions* of actions)
+        transition_probabilities: a dictionary that returns a state distribution
                                   for a given (state, action) pair
-        rewards:                  a function that returns a reward for a given
+        rewards:                  a dictionary that returns a reward for a given
                                   (state, action) pair
-        costs:                    a function that returns a cost for a given
+        costs:                    a dictionary that returns a cost for a given
                                   (state, action) pair
         """
-        self.states                   = states
-        self.actions                  = actions
-        self.rewards                  = rewards
-        self.costs                    = costs
-        self.transition_probabilities = transition_probabilities
+        self.states                   = {s: i for i, s in enumerate(states)}
+        self.actions                  = {a: i for i, a in enumerate(actions)}
+        self.rewards                  = dict_to_fun(rewards)
+        self.costs                    = dict_to_fun(costs)
+        self.transition_probabilities = dict_to_fun(transition_probabilities)
 
         self.observation_space = gym.spaces.Discrete(len(states))
-#        self.action_space      = gym.spaces.Discrete(len(actions[states[0]]))
         self.action_space      = gym.spaces.Discrete(len(actions))
-
 
     def step(self, action):
         """
@@ -36,6 +56,7 @@ class MDPEnv(gym.Env):
         ----------
         action: an element of the action space
         """
+        action = self.actions[action]
         reward, cost = self.rewards(self.state, action), self.costs(self.state, action)
         distribution = self.transition_probabilities(self.state, action)
         self.state = np.random.choice(self.observation_space.n, p=distribution)
