@@ -1,27 +1,27 @@
 import numpy as np
 
 
-goal_state = 3
+goal_state = 0
 
 
 def r1(s, a):
-    return s**2
+    return s**3
 
 def r2(s, a):
-    return s*a
+    return s + a
 
 def r3(s, a):
     return (s % 2) * (a % 2)
 
 def r4(s, a):
-    return 1 * (s == goal_state)
+    return 100 * (s == goal_state)
 
 def r5(s, a):
     return 1 * (s % 2 == 0)
 
 
 def c1(s, a):
-    return max(1, a**2)
+    return max(1, s * a)
 
 def c2(s, a):
     return 1 / max(1, s*a)
@@ -36,4 +36,4 @@ def c5(s, a):
     return 1
 
 def c6(s, a):
-    return np.exp(abs(goal_state - s))
+    return 1 * (s == goal_state) + 10 * (s != goal_state)
