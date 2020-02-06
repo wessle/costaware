@@ -2,6 +2,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from itertools import product
+from collections import deque
 
 import simple_test.agents as agents
 import simple_test.mdp_env as mdp_env
@@ -51,7 +52,7 @@ if __name__ == '__main__':
     ratios = []
 
     if mc_testing:
-        time_in_goal = 0
+        time_in_goal = deque(maxlen=mc_testing_time_window)
         percentage_time_in_goal = []
 
     for i in range(1, num_steps+1):
@@ -61,7 +62,8 @@ if __name__ == '__main__':
         ratios.append(agent.rho)
 
         if mc_testing:
-            time_in_goal += r(env.state, action)
+            time_in_goal.append(r(env.state, action))
+            percentage_time_in_goal.append(sum(time_in_goal) / len(time_in_goal))
 
         if i % print_interval == 0:
             if not mc_testing:
@@ -70,9 +72,7 @@ if __name__ == '__main__':
 
             else:
                 print('Timestep {} (rho, state, action, goal): ({:.2f}, {}, {}, {:.2f})'.format(
-                    i, agent.rho, agent.state, agent.action, time_in_goal / print_interval))
-                percentage_time_in_goal.append(time_in_goal / print_interval)
-                time_in_goal = 0
+                    i, agent.rho, agent.state, agent.action, percentage_time_in_goal[-1]))
 
             if logging:
                 np.save(os.path.join(experiment_dir, 'ratios.npy'), ratios)
@@ -82,10 +82,17 @@ if __name__ == '__main__':
                             percentage_time_in_goal)
 
     if logging:
-        plt.plot(np.arange(i), np.array(ratios))
+        plt.plot(np.arange(num_steps), np.array(ratios))
         plt.xlabel('Step')
         plt.ylabel('Ratio')
         plt.savefig(os.path.join(experiment_dir, 'ratios.png'))
+
+        if mc_testing:
+            plt.clf()
+            plt.plot(np.arange(num_steps), np.array(percentage_time_in_goal))
+            plt.xlabel('Step')
+            plt.ylabel('% time spent in goal state')
+            plt.savefig(os.path.join(experiment_dir, 'percent_time_in_goal.png'))
 
 
 
