@@ -4,6 +4,7 @@ import torch
 from collections import OrderedDict
 from time import time
 import os
+import sys
 
 import main.core.agents as agents
 import main.core.asset as asset
@@ -19,12 +20,16 @@ if __name__ == '__main__':
     # Set the number of threads pytorch can use, seed RNGs
     torch.set_num_threads(config['num_threads'])
     if config['seed'] is not None:
-        torch.manual_seed(config['seed'])
-        np.random.seed(config['seed'])
+        seed = config['seed']
+        torch.manual_seed(seed)
+        np.random.seed(seed)
+    elif len(sys.argv) > 1:
+        seed = int(sys.argv[1])
+        np.random.seed(seed)
     else:
         seed = np.random.randint(1000)
-        print('Seed: {}'.format(seed))
         np.random.seed(seed)
+    print('Seed: {}'.format(seed))
 
     # experiment parameters
     algorithm_name = config['algorithm_name']

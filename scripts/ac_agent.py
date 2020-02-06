@@ -4,6 +4,7 @@ import torch
 from collections import OrderedDict
 from time import time, sleep
 import os
+import sys
 
 import main.core.agents as agents
 import main.core.asset as asset
@@ -21,12 +22,16 @@ if __name__ == '__main__':
     # Set the number of threads pytorch can use, seed RNGs
     torch.set_num_threads(config['num_threads'])
     if config['seed'] is not None:
-        torch.manual_seed(config['seed'])
-        np.random.seed(config['seed'])
+        seed = config['seed']
+        torch.manual_seed(seed)
+        np.random.seed(seed)
+    elif len(sys.argv) > 1:
+        seed = int(sys.argv[1])
+        np.random.seed(seed)
     else:
         seed = np.random.randint(1000)
-        print('Seed: {}'.format(seed))
         np.random.seed(seed)
+    print('Seed: {}'.format(seed))
 
     # experiment parameters
     algorithm_name = config['algorithm_name']
@@ -103,6 +108,7 @@ if __name__ == '__main__':
 
 
     end_values = []
+    rhos = []
     for i in range(num_episodes):
         average_action = np.zeros(action_dim)
         t0 = time()
@@ -112,14 +118,18 @@ if __name__ == '__main__':
             state, reward_cost_tuple, proceed, _  = env.step(action)
             agent.update(reward_cost_tuple, state)
         end_values.append(env.state[0])
-        print('Episode {:<6} | ${:>15.2f} | {:.2f}s | {}'.format(
+        rho = agent.mu_r / agent.mu_c
+        rhos.append(rho)
+        print('Episode {:<6} | ${:>15.2f} | {:.2f}s | {} | {}'.format(
             i, env.state[0],time() - t0,
-            (average_action / episode_len).round(decimals=2)))
+            (average_action / episode_len).round(decimals=2),
+            rho))
         env.reset()
 
         if i + 1 % checkpoint_interval == 0:
             agent.save_models(os.path.join(experiment_dir, 'models.pt'))
             np.save(os.path.join(experiment_dir, 'end_values.npy'),
                     np.array(end_values))
+            np.save(os.path.join(experiment_dir, 'rhos.npy'), rhos)
 
 # end

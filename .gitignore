@@ -9,3 +9,4 @@ simple_test/*.png
 !data/note.txt
 !.gitignore
 !simple_test/data/empty.txt
+!data/portfolio_tests
