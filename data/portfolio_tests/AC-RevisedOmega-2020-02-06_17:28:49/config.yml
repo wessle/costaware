@@ -35,6 +35,6 @@ env_name: 'RevisedOmega' # 'Sharpe' 'Omega' 'Sortino'
 env_target_return: 0.000
 num_episodes: 300
 episode_len: 253 # trading days in a year
-checkpoint_interval: 100
+checkpoint_interval: 2
 loading_checkpoint: False
 log_dir: '../data/'

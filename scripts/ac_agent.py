@@ -108,8 +108,7 @@ if __name__ == '__main__':
 
 
     end_values = []
-    rhos = []
-    for i in range(num_episodes):
+    for i in range(1, num_episodes+1):
         average_action = np.zeros(action_dim)
         t0 = time()
         for _ in range(episode_len):
@@ -118,18 +117,14 @@ if __name__ == '__main__':
             state, reward_cost_tuple, proceed, _  = env.step(action)
             agent.update(reward_cost_tuple, state)
         end_values.append(env.state[0])
-        rho = agent.mu_r / agent.mu_c
-        rhos.append(rho)
-        print('Episode {:<6} | ${:>15.2f} | {:.2f}s | {} | {}'.format(
+        print('Episode {:<6} | ${:>15.2f} | {:.2f}s | {}'.format(
             i, env.state[0],time() - t0,
-            (average_action / episode_len).round(decimals=2),
-            rho))
+            (average_action / episode_len).round(decimals=2)))
         env.reset()
 
-        if i + 1 % checkpoint_interval == 0:
+        if i % checkpoint_interval == 0:
             agent.save_models(os.path.join(experiment_dir, 'models.pt'))
             np.save(os.path.join(experiment_dir, 'end_values.npy'),
                     np.array(end_values))
-            np.save(os.path.join(experiment_dir, 'rhos.npy'), rhos)
 
 # end
