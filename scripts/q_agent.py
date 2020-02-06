@@ -21,6 +21,10 @@ if __name__ == '__main__':
     if config['seed'] is not None:
         torch.manual_seed(config['seed'])
         np.random.seed(config['seed'])
+    else:
+        seed = np.random.randint(1000)
+        print('Seed: {}'.format(seed))
+        np.random.seed(seed)
 
     # experiment parameters
     algorithm_name = config['algorithm_name']
