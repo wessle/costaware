@@ -4,8 +4,8 @@ seed: null # null for no or command-line seed
 
 # asset parameters
 init_prices: [1, 1, 1]
-mean_returns: [-0.00005, 0.00015, 0.0004] # annual -2%, 4%, 10%
-stdev_returns: [0.0001, 0.0000, 0.0001]
+mean_returns: [-0.0004, 0.00015, 0.0004] # annual -10%, 4%, 10%
+stdev_returns: [0.00001, 0.0000, 0.00001]
 init_weights: [0.34, 0.33, 0.33]
 # init_prices: [1, 1]
 # mean_returns: [-0.00005, 0.00024]
@@ -19,7 +19,7 @@ batchsize: 64
 discretization_steps: 4
 q_lr: 0.0001
 rho_lr: 0.1
-eps: 0.05
+eps: 0.3
 enable_cuda: False
 rho_init: 0
 grad_clip_radius: null # set to null for no clipping
