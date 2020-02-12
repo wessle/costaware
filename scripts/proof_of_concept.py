@@ -1,7 +1,5 @@
 import gym
-import main.core.envs as envs
-import main.core.portfolio as portfolio
-import main.core.asset as asset
+from main.core import envs, portfolio, asset
 
 SIM_LEN = 253
 

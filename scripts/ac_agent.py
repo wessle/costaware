@@ -6,11 +6,8 @@ from time import time, sleep
 import os
 import sys
 
-import main.core.agents as agents
-import main.core.asset as asset
-import main.core.envs as envs
-import main.core.models as models
 import main.utils.utils as utils
+from main.core import agents, asset, envs, models
 
 
 if __name__ == '__main__':

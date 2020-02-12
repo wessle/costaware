@@ -1,10 +1,8 @@
 import gym
-import main.utils.moments as moments
-import main.utils.ecdf as ecdf
-import main.utils.utils as utils
 import numpy as np
-
 from gym import spaces
+
+from main.utils import moments, ecdf, utils
 
 
 class AllocationSimplex(spaces.Box):
