@@ -6,6 +6,9 @@ wes_console_shortcuts.py
 data/*
 simple_test/*.png
 simple_test/data
+data/portfolio_tests/*
+theory_tests/data/*
+theory_tests/plots/*
 
 !data/note.txt
 !.gitignore
