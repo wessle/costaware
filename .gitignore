@@ -1,9 +1,0 @@
-costaware.egg-info
-.venv
-**__pycache__
-**.swp
-wes_console_shortcuts.py
-data/*
-
-!data/empty.txt
-!.gitignore
