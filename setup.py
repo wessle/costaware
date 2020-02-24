@@ -10,6 +10,7 @@ setup(
         'torch',
         'pyyaml',
         'gym',
-        'scipy'
+        'scipy',
+        'wesutils'
     ]
 )
