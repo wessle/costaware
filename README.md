@@ -11,15 +11,4 @@ Add new dependencies by editing the `install_requires` field in setup.py, then d
 
 ### TODOs
 
-- [x] Implement `Asset` class 
-- [ ] Write unit tests for `Asset` class
-- [x] Implement `Portfolio` class
-- [ ] Write unit tests for `Portfolio` class
-- [ ] Implement OpenAI Gym `env` subclass for financial simulation
-- [ ] Write tests for environment
-- [X] Implement Q-learning agent
-- [ ] Write tests for Q-learning agent
-- [X] Implement AC agent
-- [ ] Write tests for AC agent
-- [ ] Get Q-learning agent learning
-- [ ] Get AC agent learning
+- [ ] Write new TODO list
