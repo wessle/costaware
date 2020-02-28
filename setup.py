@@ -11,6 +11,6 @@ setup(
         'pyyaml',
         'gym',
         'scipy',
-        'wesutils'
+        'wesutils>=0.0.4'
     ]
 )

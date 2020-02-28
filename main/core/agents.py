@@ -8,8 +8,6 @@ import numbers
 from scipy.special import softmax
 from copy import deepcopy
 
-import main.utils.utils as utils
-
 
 # RL agents using batch learning and neural nets for function approximators
 
@@ -56,7 +54,7 @@ class DeepRVIQLearningBasedAgent(DeepRLAgent):
                  grad_clip_radius=None,
                  rho_init=0.0, rho_clip_radius=None):
 
-        self.buffer = utils.Buffer(buffer_maxlen)
+        self.buffer = wesutils.Buffer(buffer_maxlen)
         self.N = batchsize
         self.actions = actions # numpy array of actions
         self.q = q_network
@@ -150,12 +148,13 @@ class DeepRVIQLearningBasedAgent(DeepRLAgent):
 
         assert self.state is not None, "sample_action must be called first"
 
-        new_sample = (self.state, self.action, reward_cost_tuple, next_state)
-        self.buffer.add(new_sample)
+        reward, cost = reward_cost_tuple
+        new_sample = (self.state, self.action, reward, cost, next_state)
+        self.buffer.append(new_sample)
 
         if len(self.buffer) >= self.N:
             states, actions, rewards, costs, next_states = \
-                    wesutils.arrays_to_tensors(self.buffer.sample_batch(self.N),
+                    wesutils.arrays_to_tensors(self.buffer.sample(self.N),
                                             self.device)
 
             # assemble pieces for the Q update
@@ -224,7 +223,7 @@ class DeepACAgent(DeepRLAgent):
                  grad_clip_radius=None,
                  reward_cost_mean_floor=1e-8):
 
-        self.buffer = utils.Buffer(buffer_maxlen)
+        self.buffer = wesutils.Buffer(buffer_maxlen)
         self.N = batchsize
         self.pi = policy_network
         self.pi_optim = policy_optimizer(self.pi.parameters(), lr=policy_lr)
@@ -288,19 +287,19 @@ class DeepACAgent(DeepRLAgent):
 
         assert self.state is not None, "sample_action must be called first"
 
-        new_sample = (self.state, self.action, reward_cost_tuple, next_state)
-        self.buffer.add(new_sample)
+        reward, cost = reward_cost_tuple
+        new_sample = (self.state, self.action, reward, cost, next_state)
+        self.buffer.append(new_sample)
 
         # NOTE: the mu values below are not being used at the moment,
         # but I'm keeping them around just in case
-        reward, cost = reward_cost_tuple
         self.mu_r = self.mu_lr * reward + (1 - self.mu_lr) * self.mu_r
         self.mu_c = self.mu_lr * cost + (1 - self.mu_lr) * self.mu_c
 
         if len(self.buffer) >= self.N:
             # actions are not needed for these updates, so ignore them
             states, _, rewards, costs, next_states = \
-                    wesutils.arrays_to_tensors(self.buffer.sample_batch(self.N),
+                    wesutils.arrays_to_tensors(self.buffer.sample(self.N),
                                             self.device)
 
             rewards = rewards.unsqueeze(dim=1)
