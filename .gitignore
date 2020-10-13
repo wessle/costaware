@@ -1,0 +1,9 @@
+CAMDP_code.zip
+costaware.egg-info
+.venv
+**__pycache__
+**.swp
+data/*
+
+!data/empty.txt
+!.gitignore
