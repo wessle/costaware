@@ -20,8 +20,8 @@ grad_clip_radius = None
 rho_clip_radius = None
 
 # experiment parameters
-num_episodes = 10
-episode_len = 50
+num_episodes = 100
+episode_len = 500
 
 
 # Define a cost function to be used in our cost-aware environment
