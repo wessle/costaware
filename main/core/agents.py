@@ -54,7 +54,7 @@ class DeepRVIQLearningBasedAgent(DeepRLAgent):
                  grad_clip_radius=None,
                  rho_init=0.0, rho_clip_radius=None):
 
-        self.buffer = wesutils.Buffer(buffer_maxlen)
+        self.buffer = wesutils.Buffer(maxlen=buffer_maxlen)
         self.N = batchsize
         self.actions = actions # numpy array of actions
         self.q = q_network
@@ -64,7 +64,8 @@ class DeepRVIQLearningBasedAgent(DeepRLAgent):
         self.__enable_cuda = enable_cuda
         self.enable_cuda(self.__enable_cuda, warn=False)
         # NOTE: self.device is defined when self.enable_cuda is called
-        self.torch_actions = torch.FloatTensor(actions).to(self.device)
+        self.torch_actions = torch.FloatTensor(actions).to(
+            self.device).unsqueeze(dim=1)
 
         self.q_optim = optimizer(self.q.parameters(), lr=q_lr)
         self.rho_lr = rho_lr
@@ -165,7 +166,7 @@ class DeepRVIQLearningBasedAgent(DeepRLAgent):
             q_targets = proxy_rewards - average_reward + next_state_values
 
             # form the loss function and take a gradient step
-            q_inputs = torch.cat([states, actions], dim=1)
+            q_inputs = torch.cat([states, actions.unsqueeze(dim=1)], dim=1)
             q_estimates = self.q(q_inputs)
 
             loss = self.q_loss(q_targets.unsqueeze(dim=1), q_estimates)
