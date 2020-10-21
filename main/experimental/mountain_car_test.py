@@ -26,7 +26,7 @@ episode_len = 500
 
 # Define a cost function to be used in our cost-aware environment
 def cost_fn(state):
-    return np.clip(state[0] + 0.7, 0.1, 1)
+    return max(state[0] + 0.7, 0.1)**2
 
 if __name__ == '__main__':
 

@@ -180,8 +180,8 @@ class DeepRVIQLearningBasedAgent(DeepRLAgent):
             self.q_optim.step()
 
             # perform the rho update
-            # ref_state_val = self.ref_state_val().item()
-            self.ref_val_est = 0.99 * self.ref_val_est + 0.01 * proxy_rewards.mean()
+            # ref_state_val = self.ref_state_val().item() # not working 10/21
+            self.ref_val_est = 0.99 * self.ref_val_est + 0.01 * proxy_rewards.mean() # working 10/21
             ref_state_val = self.ref_val_est
             self.rho += np.sign(ref_state_val) * min(
                 self.rho_clip_radius, self.rho_lr * abs(ref_state_val))
