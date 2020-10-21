@@ -11,7 +11,6 @@ mountain_car_path = os.path.abspath(filename)
 MountainCarEnv = module_from_path('mountain_car',
                                   mountain_car_path).MountainCarEnv
 
-
 class MountainCarCostAwareEnv(MountainCarEnv):
     """
     Extension of the OpenAI MountainCarEnv to include a cost as well as

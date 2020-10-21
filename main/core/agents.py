@@ -78,6 +78,8 @@ class DeepRVIQLearningBasedAgent(DeepRLAgent):
         self.action = None
         self.ref_state = None
 
+        self.ref_val_est = 0
+
     def set_reference_state(self, state):
         """Set the reference state to be used in updates."""
 
@@ -113,7 +115,7 @@ class DeepRVIQLearningBasedAgent(DeepRLAgent):
     def sample_action(self, state):
         """
         Sample an action epsilon-greedily.
-        
+        "
         An action must be sampled before self.update can be called.
         """
 
@@ -178,7 +180,9 @@ class DeepRVIQLearningBasedAgent(DeepRLAgent):
             self.q_optim.step()
 
             # perform the rho update
-            ref_state_val = self.ref_state_val().item()
+            # ref_state_val = self.ref_state_val().item()
+            self.ref_val_est = 0.99 * self.ref_val_est + 0.01 * proxy_rewards.mean()
+            ref_state_val = self.ref_val_est
             self.rho += np.sign(ref_state_val) * min(
                 self.rho_clip_radius, self.rho_lr * abs(ref_state_val))
 

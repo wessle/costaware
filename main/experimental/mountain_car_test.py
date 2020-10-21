@@ -26,7 +26,7 @@ episode_len = 500
 
 # Define a cost function to be used in our cost-aware environment
 def cost_fn(state):
-    return 1.0 + max(1-state[0], 0)
+    return 0.1 + max(1-state[0], 0)
 
 if __name__ == '__main__':
 
@@ -70,9 +70,9 @@ if __name__ == '__main__':
         # safe info and print update
         end_values.append((np.sum(rewards), np.sum(costs)))
         rhos.append(np.mean(rewards) / np.mean(costs))
-        print('ep | rew | cost | time | rho | sref :  '
-              '{:<3} | {:>3.2f} | {:>3.2f} | {:.2f}s | {:.4f} | {:.8f}'.format(
+        print('ep | rew | cost | time | rho | val_est | Vsref :  '
+              '{:<3} | {:>3.2f} | {:>3.2f} | {:.2f}s | {:.4f} | {:.8f} | {:.8f}'.format(
             i, *end_values[-1], time() - t0,
-            rhos[-1], agent.ref_state_val()))
+            rhos[-1], agent.ref_val_est, agent.ref_state_val()))
 
         env.reset()
