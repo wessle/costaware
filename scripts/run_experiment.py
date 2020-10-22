@@ -31,7 +31,7 @@ AgentClass = {
 
 if __name__ = '__main__':
 
-    agent = AgentClass[args.agent](**c)
+    agent = AgentClass[args.agent](**args.config)
     env   = generate_mdp_env()
     io    = IOManager(output_dir)
 
