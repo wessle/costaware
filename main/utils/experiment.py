@@ -1,3 +1,15 @@
+import os 
+import yaml
+
+import numpy as np
+import main.core.envs as envs
+import main.utils.defaults as defaults
+import matplotlib.pyplot as plt
+
+from collections import deque
+from itertools import product
+
+
 def generate_mdp_env(num_states, num_actions, rewards, costs,
                          transition_seed=None, training_seed=None):
         """
@@ -17,13 +29,15 @@ def generate_mdp_env(num_states, num_actions, rewards, costs,
         def transition_matrix(state, action):
             return probs[(state, action)]
     
-    
-        rewards_fn = functions['rewards'][rewards]
-        costs_fn   = functions['costs'][costs]
+        if isinstance(rewards, str):
+            rewards = defaults.__dict__[rewards]
+
+        if isinstance(costs, str):
+            costs = defaults.__dict__[costs]
     
         np.random.seed(training_seed)
     
-        env = envs.MDPEnv(states, actions, transition_matrix, rewards_fn, costs_fn)
+        env = envs.MDPEnv(states, actions, transition_matrix, rewards, costs)
     
         return states, actions, env
 
@@ -33,10 +47,15 @@ class IOManager:
     """
 
     def __init__(self, output_dir):
+        os.mkdir(output_dir)
         self.output_dir = output_dir
 
     def to_stdout(self, msg):
         print(msg)
+
+    def save_yml(self, filename, dictionary):
+        with open(os.path.join(self.output_dir, filename), 'w') as out:
+            out.write(yaml.safe_dump(dictionary))
 
     def save_npy(self, filename, array):
         np.save(os.path.join(self.output_dir, filename), array)
@@ -66,8 +85,6 @@ class TrialRunner:
            log to save files.
          - n_steps (default = 500000)
            Number of training steps.
-         - agent_name (default = 'UnspecifiedAgentName')
-           How to label the agent in plaintext.
          - logging (default = True)
            Whether the experiment will save ratios to a file.
          - plotting (default = False)
@@ -83,13 +100,12 @@ class TrialRunner:
             'width':               100,
             'print_interval':   10_000,
             'n_steps':         500_000,
-            'agent_name':      'UnspecifiedAgentName',
             'logging':         True,
             'plotting':        False,
             'stdouting':       True,
         }
         defaults.update(kwargs)
-        self.update(defaults)
+        self.update(**defaults)
 
     def update(self, **kwargs):
         """
@@ -114,10 +130,10 @@ class TrialRunner:
         defaults.update(kwargs)
 
         output_message = ' '.join([
-            f'{self.agent_name}',
+            f'{self.agent.title}',
             f'timestep: {kwargs["step"]:7d}',
             f'(rho={kwargs["ratio"]:.2f}, state={self.agent.state}, action={self.agent.action})'
-        ]))
+        ])
 
         self.io.to_stdout(output_message)
     
@@ -134,7 +150,7 @@ class TrialRunner:
         }
         defaults.update(kwargs)
 
-        filename = f"{self.agent_name}_ratios.npy"
+        filename = f"{self.agent.title}_ratios.npy"
 
         self.io.save_npy(filename, kwargs['ratios'])
     
@@ -153,7 +169,7 @@ class TrialRunner:
         }
         defaults.update(kwargs)
 
-        filename = f"{kwargs['agent_name']}_ratios.png"
+        filename = f"{self.agent.title}_ratios.png"
 
         fig, ax = plt.subplots()
 
@@ -173,7 +189,7 @@ class TrialRunner:
         ratios = []
         rewards, costs = deque(maxlen=self.width), deque(maxlen=self.width)
     
-        for step in range(self.steps):
+        for step in range(self.n_steps):
             # First, process the agent and the environment
             action = self.agent.sample_action(self.env.state)
             next_state, (reward, cost), _, _ = self.env.step(action)
