@@ -45,7 +45,7 @@ class IOManager:
         fig.savefig(os.path.join(self.output_dir, filename), **kwargs) 
 
 
-class ExperimentManager:
+class TrialRunner:
     """
     Given an environment and an agent, do training and store the results.
     """
@@ -189,7 +189,7 @@ class ExperimentManager:
                     self.stdout_callback(step=step, ratio=ratios[-1])
     
                 if self.logging:
-                    self.logger_callback(step=step, ratios=ratios)
+                    self.logger_callback(ratios=ratios)
     
         
         if self.logging:  # Final I/O callback
