@@ -54,7 +54,6 @@ class DeepRVIQLearningBasedAgent(DeepRLAgent):
                  grad_clip_radius=None,
                  rho_init=0.0, rho_clip_radius=None):
 
-        self.title = "DeepRVIQLearningBasedAgent"
         self.buffer = wesutils.Buffer(buffer_maxlen)
         self.N = batchsize
         self.actions = actions # numpy array of actions
@@ -224,7 +223,6 @@ class DeepACAgent(DeepRLAgent):
                  grad_clip_radius=None,
                  reward_cost_mean_floor=1e-8):
 
-        self.title = "DeepACAgent"
         self.buffer = wesutils.Buffer(buffer_maxlen)
         self.N = batchsize
         self.pi = policy_network
@@ -403,7 +401,6 @@ class TabularQAgent:
     def __init__(self, states, actions, q_lr, rho_lr,
                  rho_init=0, eps=0.1, ref_state=None):
 
-        self.title = "TabularQAgent"
         self.states = tuple(states)
         self.state_indices = {s: i for i, s in enumerate(states)}
         self.actions = tuple(actions)
@@ -586,7 +583,6 @@ class ContinuingACAgent:
                  init_mu_r=0, init_mu_c=0, mu_lr=0.005,
                  mu_floor=0.01,
                  grad_clip_radius=None):
-        self.title = "ContinuingACAgent"
         self.pi = policy
         self.rv = value_function
         self.cv = deepcopy(self.rv)
@@ -668,4 +664,3 @@ class LinearACAgent(ContinuingACAgent):
                          mu_floor=mu_floor,
                          grad_clip_radius=grad_clip_radius)
 
-        self.title = "LinearACAgent"
