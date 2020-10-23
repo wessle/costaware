@@ -97,12 +97,13 @@ class TrialRunner:
         self.io    = io_manager
 
         defaults = {
-            'width':               100,
-            'print_interval':   10_000,
-            'n_steps':         500_000,
-            'logging':         True,
-            'plotting':        False,
-            'stdouting':       True,
+            'width':          100,
+            'print_interval': 10_000,
+            'n_steps':        500_000,
+            'logging':        True,
+            'plotting':       False,
+            'stdouting':      True,
+            'agent_name':     type(agent).__name__,
         }
         defaults.update(kwargs)
         self.update(**defaults)
@@ -130,7 +131,7 @@ class TrialRunner:
         defaults.update(kwargs)
 
         output_message = ' '.join([
-            f'{self.agent.title}',
+            f'{self.agent_name}',
             f'timestep: {kwargs["step"]:7d}',
             f'(rho={kwargs["ratio"]:.2f}, state={self.agent.state}, action={self.agent.action})'
         ])
@@ -150,7 +151,7 @@ class TrialRunner:
         }
         defaults.update(kwargs)
 
-        filename = f"{self.agent.title}_ratios.npy"
+        filename = f"{self.agent_name}_ratios.npy"
 
         self.io.save_npy(filename, kwargs['ratios'])
     
@@ -169,7 +170,7 @@ class TrialRunner:
         }
         defaults.update(kwargs)
 
-        filename = f"{self.agent.title}_ratios.png"
+        filename = f"{self.agent_name}_ratios.png"
 
         fig, ax = plt.subplots()
 

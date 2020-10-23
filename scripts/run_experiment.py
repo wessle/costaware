@@ -57,7 +57,7 @@ if __name__ == '__main__':
     output_dir = os.path.join(
         args.output,
         '_'.join([
-            agent.title,
+            type(agent).__name__,  # "TabularQAgent", etc.
             f's{len(states)}a{len(actions)}',
             time_str
         ])
