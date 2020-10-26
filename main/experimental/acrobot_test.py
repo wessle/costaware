@@ -58,7 +58,8 @@ if __name__ == '__main__':
         t0 = time()
         for _ in range(episode_len):
             env_state = env.state
-            if len(env_state) > 4: # Sometimes the state return an array of 6 items, but we only use the first 4
+            if len(env_state) > 4:
+                # Sometimes the state return an array of 6 items, but we only use the first 4
                 env_state = state[0:4]
             action = agent.sample_action(env_state)
             state, reward_cost_tuple, done, _  = env.step(action)
