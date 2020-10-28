@@ -1,4 +1,5 @@
 import numpy as np
+from numpy import cos
 import wesutils
 from time import time
 from gym.spaces import Discrete
@@ -7,12 +8,12 @@ from main.core import agents
 from main.experimental.experimental_envs import AcrobotCostAwareEnv
 
 # network and agent parameters
-Q_hidden_units = 64
+Q_hidden_units = 256
 buffer_maxlen = 100000
-batchsize = 64
+batchsize = 256
 q_lr = 0.001
 rho_lr = 0.0001
-eps = 0.99
+eps = 0.1
 enable_cuda = False
 rho_init = 0
 grad_clip_radius = None
@@ -20,23 +21,35 @@ rho_clip_radius = None
 
 # experiment parameters
 num_episodes = 500
-episode_len = 100
+episode_len = 500
 
 
-# Define a cost function to be used in our cost-aware environment
+# TODO: Learning outcome is weird (not stabilizing)
 def cost_fn(state):
-    return max(state[0] + 0.7, 0.1)**2
+    """
+    A state of [1, 0, 1, 0, ..., ...] means that both links point downwards.
+    swung height = -cos(state[0]) - cos(state[1] + state[0])
+    """
+    height = -cos(state[0]) - cos(state[1] + state[0])
+    if state[0] > 0:
+        # First line is below horizontal, maximize the second angle (between first and second link)
+        cost = max(1-state[2], 0.1) ** 2
+    else:
+        # first link is above horizontal, give higher cost for higher height reached
+        cost = (1+height) ** 2
+    return cost
+
 
 if __name__ == '__main__':
 
     # create env
-    env = AcrobotCostAwareEnv()
+    env = AcrobotCostAwareEnv(cost_fn = cost_fn)
     env.reset()
 
     # gather info about the env
     state_dim = len(env.state)
     num_actions = env.action_space.n
-    action_dim = 1 if isinstance(env.action_space, Discrete) else 0 # TODO grab this from env.action_space instead
+    action_dim = 1 if isinstance(env.action_space, Discrete) else 0
 
     # create Q function and agent
     Q = wesutils.two_layer_net(state_dim + action_dim, 1,
@@ -53,7 +66,7 @@ if __name__ == '__main__':
 
     # run the experiment
     end_values, rhos = [], []
-    for i in range(1, num_episodes+1):
+    for i in range(1, num_episodes + 1):
         rewards, costs = [], []
         t0 = time()
         for _ in range(episode_len):
@@ -62,7 +75,7 @@ if __name__ == '__main__':
                 # Sometimes the state return an array of 6 items, but we only use the first 4
                 env_state = state[0:4]
             action = agent.sample_action(env_state)
-            state, reward_cost_tuple, done, _  = env.step(action)
+            state, reward_cost_tuple, done, _ = env.step(action)
             reward, cost = reward_cost_tuple
             rewards.append(reward)
             costs.append(cost)
@@ -73,9 +86,11 @@ if __name__ == '__main__':
         # safe info and print update
         end_values.append((np.sum(rewards), np.sum(costs)))
         rhos.append(np.mean(rewards) / np.mean(costs))
-        print("{:^5s} | {:^10s} | {:^10s} | {:^10s} | {:^15s} | {:^15s} | {:^15s}".format("ep", "rew", "cost", "time(s)", "rho", "val_est", "Vsref"))
+        print(
+            "{:^5s} | {:^10s} | {:^10s} | {:^10s} | {:^15s} | {:^15s} | {:^15s}".format("ep", "rew", "cost", "time(s)",
+                                                                                        "rho", "val_est", "Vsref"))
         print('{:^5} | {:^10.2f} | {:^10.2f} | {:^10.2f} | {:^15.4f} | {:^15.8f} | {:^15.8f}'.format(
-         i, *end_values[-1], time() - t0,
-         rhos[-1], agent.ref_val_est, agent.ref_state_val()))
+            i, *end_values[-1], time() - t0,
+            rhos[-1], agent.ref_val_est, agent.ref_state_val()))
 
         env.reset()
