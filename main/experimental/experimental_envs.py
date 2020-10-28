@@ -2,14 +2,17 @@ import gym
 import os
 from copy import deepcopy
 
-from util import module_from_path
-
+from main.experimental.util import module_from_path
 
 # Obtain the mountain_car module so we can subclass MountainCarEnv
-filename = deepcopy(*gym.envs.__path__) + '/classic_control/mountain_car.py'
-mountain_car_path = os.path.abspath(filename)
-MountainCarEnv = module_from_path('mountain_car',
-                                  mountain_car_path).MountainCarEnv
+mount_car_file = deepcopy(*gym.envs.__path__) + '/classic_control/mountain_car.py'
+mountain_car_path = os.path.abspath(mount_car_file)
+MountainCarEnv = module_from_path('mountain_car', mountain_car_path).MountainCarEnv
+
+acrobot_file = deepcopy(*gym.envs.__path__) + '/classic_control/acrobot.py'
+acrobot_path = os.path.abspath(acrobot_file)
+AcrobotEnv = module_from_path('acrobot', acrobot_path).AcrobotEnv
+
 
 class MountainCarCostAwareEnv(MountainCarEnv):
     """
@@ -28,4 +31,17 @@ class MountainCarCostAwareEnv(MountainCarEnv):
 
     def step(self, action):
         state, reward, done, d = MountainCarEnv.step(self, action)
+        return state, (reward, self.cost_fn(state)), done, d
+
+
+class AcrobotCostAwareEnv(AcrobotEnv):
+    """
+    This is a costaware version of the OpenAI Gym ACRobot Environment
+    """
+    def __init__(self, cost_fn=lambda x: 1.0):
+        AcrobotEnv.__init__(self)
+        self.cost_fn = cost_fn
+
+    def step(self, action):
+        state, reward, done, d = AcrobotEnv.step(self, action)
         return state, (reward, self.cost_fn(state)), done, d

@@ -1,10 +1,11 @@
 import numpy as np
+from numpy import cos
 import wesutils
 from time import time
 from gym.spaces import Discrete
 
 from main.core import agents
-from main.experimental.experimental_envs import MountainCarCostAwareEnv
+from main.experimental.experimental_envs import AcrobotCostAwareEnv
 
 # network and agent parameters
 Q_hidden_units = 256
@@ -19,31 +20,30 @@ grad_clip_radius = None
 rho_clip_radius = None
 
 # experiment parameters
-num_episodes = 100
+num_episodes = 500
 episode_len = 500
 
 
-# Define a cost function to be used in our cost-aware environment
-# Working cost function
+# TODO: Learning outcome is weird (not stabilizing)
 def cost_fn(state):
-    cost = max(state[0] + 0.7, 0.1) ** 2
-    return cost
-
-
-# TODO NOT working
-def cost_fn1(state):
-    position = state[0]
-    if position >= 0:
-        cost = (position+1.3) ** 2
+    """
+    A state of [1, 0, 1, 0, ..., ...] means that both links point downwards.
+    swung height = -cos(state[0]) - cos(state[1] + state[0])
+    """
+    height = -cos(state[0]) - cos(state[1] + state[0])
+    if state[0] > 0:
+        # First line is below horizontal, maximize the second angle (between first and second link)
+        cost = max(1-state[2], 0.1) ** 2
     else:
-        cost = 0.1**2
+        # first link is above horizontal, give higher cost for higher height reached
+        cost = (1+height) ** 2
     return cost
 
 
 if __name__ == '__main__':
 
     # create env
-    env = MountainCarCostAwareEnv(cost_fn=cost_fn)
+    env = AcrobotCostAwareEnv(cost_fn = cost_fn)
     env.reset()
 
     # gather info about the env
@@ -70,20 +70,26 @@ if __name__ == '__main__':
         rewards, costs = [], []
         t0 = time()
         for _ in range(episode_len):
-            action = agent.sample_action(env.state)
+            env_state = env.state
+            if len(env_state) > 4:
+                # Sometimes the state return an array of 6 items, but we only use the first 4
+                env_state = state[0:4]
+            action = agent.sample_action(env_state)
             state, reward_cost_tuple, done, _ = env.step(action)
             reward, cost = reward_cost_tuple
             rewards.append(reward)
             costs.append(cost)
-            agent.update(reward_cost_tuple, state)
+            agent.update(reward_cost_tuple, state[0:4])
             if done:
                 break
 
         # safe info and print update
         end_values.append((np.sum(rewards), np.sum(costs)))
         rhos.append(np.mean(rewards) / np.mean(costs))
-        print('ep | rew | cost | time | rho | val_est | Vsref :  '
-              '{:<3} | {:>3.2f} | {:>3.2f} | {:.2f}s | {:.4f} | {:.8f} | {:.8f}'.format(
+        print(
+            "{:^5s} | {:^10s} | {:^10s} | {:^10s} | {:^15s} | {:^15s} | {:^15s}".format("ep", "rew", "cost", "time(s)",
+                                                                                        "rho", "val_est", "Vsref"))
+        print('{:^5} | {:^10.2f} | {:^10.2f} | {:^10.2f} | {:^15.4f} | {:^15.8f} | {:^15.8f}'.format(
             i, *end_values[-1], time() - t0,
             rhos[-1], agent.ref_val_est, agent.ref_state_val()))
 
