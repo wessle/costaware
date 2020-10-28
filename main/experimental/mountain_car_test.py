@@ -1,11 +1,10 @@
-import gym
 import numpy as np
 import wesutils
 from time import time
+from gym.spaces import Discrete
 
 from main.core import agents
-from experimental_envs import MountainCarCostAwareEnv
-
+from main.experimental.experimental_envs import MountainCarCostAwareEnv
 
 # network and agent parameters
 Q_hidden_units = 256
@@ -25,8 +24,21 @@ episode_len = 500
 
 
 # Define a cost function to be used in our cost-aware environment
+# Working cost function
 def cost_fn(state):
-    return max(state[0] + 0.7, 0.1)**2
+    cost = max(state[0] + 0.7, 0.1) ** 2
+    return cost
+
+
+# TODO NOT working
+def cost_fn1(state):
+    position = state[0]
+    if position >= 0:
+        cost = (position+1.3) ** 2
+    else:
+        cost = 0.1**2
+    return cost
+
 
 if __name__ == '__main__':
 
@@ -37,7 +49,7 @@ if __name__ == '__main__':
     # gather info about the env
     state_dim = len(env.state)
     num_actions = env.action_space.n
-    action_dim = 1 # TODO grab this from env.action_space instead
+    action_dim = 1 if isinstance(env.action_space, Discrete) else 0
 
     # create Q function and agent
     Q = wesutils.two_layer_net(state_dim + action_dim, 1,
@@ -54,12 +66,12 @@ if __name__ == '__main__':
 
     # run the experiment
     end_values, rhos = [], []
-    for i in range(1, num_episodes+1):
+    for i in range(1, num_episodes + 1):
         rewards, costs = [], []
         t0 = time()
         for _ in range(episode_len):
             action = agent.sample_action(env.state)
-            state, reward_cost_tuple, done, _  = env.step(action)
+            state, reward_cost_tuple, done, _ = env.step(action)
             reward, cost = reward_cost_tuple
             rewards.append(reward)
             costs.append(cost)
