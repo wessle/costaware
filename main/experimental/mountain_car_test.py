@@ -26,9 +26,7 @@ episode_len = 500
 # Define a cost function to be used in our cost-aware environment
 # Working cost function
 def cost_fn(state):
-    cost = max(state[0] + 0.7, 0.1) ** 2
-    return cost
-
+    return max(state[0] + 0.7, 0.1) ** 2
 
 # TODO NOT working
 def cost_fn1(state):
@@ -49,7 +47,8 @@ if __name__ == '__main__':
     # gather info about the env
     state_dim = len(env.state)
     num_actions = env.action_space.n
-    action_dim = 1 if isinstance(env.action_space, Discrete) else 0
+    assert isinstance(env.action_space, Discrete), 'action space must be 1D'
+    action_dim = 1
 
     # create Q function and agent
     Q = wesutils.two_layer_net(state_dim + action_dim, 1,
@@ -64,9 +63,14 @@ if __name__ == '__main__':
         rho_clip_radius=rho_clip_radius)
     agent.set_reference_state(env.state)
 
+    # create formats for printing output
+    fmt = '{:^5s} | {:^10s} | {:^10s} | {:^10s} | {:^10s} | {:^10s} | {:^10s}'
+    fmt_vals = '{:^5} | {:^10.2f} | {:^10.2f} | {:^10.2f} | {:^10.2f} | ' + \
+            '{:^10.2f} | {:^10.2f}'
+
     # run the experiment
     end_values, rhos = [], []
-    for i in range(1, num_episodes + 1):
+    for i in range(num_episodes):
         rewards, costs = [], []
         t0 = time()
         for _ in range(episode_len):
@@ -79,12 +83,14 @@ if __name__ == '__main__':
             if done:
                 break
 
-        # safe info and print update
+        # save info and print update
         end_values.append((np.sum(rewards), np.sum(costs)))
         rhos.append(np.mean(rewards) / np.mean(costs))
-        print('ep | rew | cost | time | rho | val_est | Vsref :  '
-              '{:<3} | {:>3.2f} | {:>3.2f} | {:.2f}s | {:.4f} | {:.8f} | {:.8f}'.format(
-            i, *end_values[-1], time() - t0,
+
+        if i % 20 == 0:
+            print(fmt.format(
+                'ep', 'rew', 'cost', 'time(s)', 'rho', 'val_est', 'Vsref'))
+        print(fmt_vals.format(i, *end_values[-1], time() - t0,
             rhos[-1], agent.ref_val_est, agent.ref_state_val()))
 
         env.reset()
