@@ -252,6 +252,7 @@ class ExperimentRunner:
         self.ray_controller = RayController()
         self.experiment_configs = None
         self.resource_configs = None
+        raise NotImplementedError
 
     def register_configs(self, experiment_configs):
         """
@@ -293,6 +294,7 @@ class RayController:
         self.num_gpus = None
         self.cpus_per_task = None
         self.gpus_per_task = None
+        raise NotImplementedError
 
     def register_resources(self, resources):
         raise NotImplementedError
@@ -314,6 +316,7 @@ class TrialConstructor:
         self.agent_constructor = AgentConstructor()
         self.iomanager_constructor = IOManagerConstructor()
         self.experiment_configs = None
+        raise NotImplementedError
 
     def register_configs(self, experiment_configs):
         """
@@ -368,6 +371,7 @@ class TrialCoordinator:
     def __init__(self):
         self.trials = None
         self.resources = None
+        raise NotImplementedError
 
     def gather_trials(self, trials):
         """
