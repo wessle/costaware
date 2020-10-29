@@ -24,7 +24,7 @@ num_episodes = 500
 episode_len = 500
 
 
-# TODO: Learning outcome is weird (not stabilizing)
+# TODO: Learning outcome is weird (sometimes it learns sometimes not)
 def cost_fn(state):
     """
     A state of [1, 0, 1, 0, ..., ...] means that both links point downwards.
