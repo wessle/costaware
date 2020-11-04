@@ -250,6 +250,10 @@ class ExperimentRunner:
     of TrialRunners.
     """
     def __init__(self):
+        # TODO: decide if trial_coordinator should be saved -- it is
+        # holding on to references to Ray actors, preventing them from
+        # being garbage collected. The references are only held until
+        # the next call to run_experiment(), however.
         self.experiment_configs = None
         self.ray_configs = None
         self.ray_controller = RayController(self)
@@ -488,6 +492,7 @@ class IOManagerConstructor:
 class TrialCoordinator:
     """
     Coordinates execution of trials.
+
     """
     def __init__(self, experiment_runner):
         self.experiment_runner = experiment_runner
@@ -507,6 +512,6 @@ class TrialCoordinator:
         to ExperimentRunner.run_experiment(). ray.get() is blocking and
         will not return until all RayTrialRunners have finished executing.
         """
-        return_vals = ray.get(self.trials)
+        return_vals = ray.get([trial.train.remote() for trial in self.trials])
 
         return return_vals
