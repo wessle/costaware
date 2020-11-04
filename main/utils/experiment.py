@@ -2,12 +2,14 @@ import os
 import yaml
 
 import numpy as np
-import main.core.envs as envs
-import main.utils.defaults as defaults
+import ray
 import matplotlib.pyplot as plt
-
 from collections import deque
 from itertools import product
+
+
+import main.core.envs as envs
+import main.utils.defaults as defaults
 
 
 def generate_mdp_env(num_states, num_actions, rewards, costs,
@@ -86,7 +88,7 @@ class TrialRunner:
          - n_steps (default = 500000)
            Number of training steps.
          - logging (default = True)
-           Whether the experiment will save ratios to a file.
+           Whether the experi)ent will save ratios to a file.
          - plotting (default = False)
            Whether the experiment will save plot summaries of the ratios.
          - stdouting (default = True)
@@ -231,6 +233,7 @@ class ConfigGenerator:
     containing all information needed to create a corresponding TrialRunner.
     """
     def __init__(self, experiment_spec):
+        self.experiment_spec = experiment_spec
         raise NotImplementedError
     
     def generate_configs(self):
@@ -247,33 +250,60 @@ class ExperimentRunner:
     of TrialRunners.
     """
     def __init__(self):
-        self.trial_constructor = TrialConstructor()
-        self.trial_coordinator = TrialCoordinator()
-        self.ray_controller = RayController()
         self.experiment_configs = None
-        self.resource_configs = None
+        self.ray_configs = None
+        self.RayController = RayController(self)
         raise NotImplementedError
 
-    def register_configs(self, experiment_configs):
+    def register_experiment_configs(self, experiment_configs):
         """
-        Parse experiment_configs for use by TrialConstructor.
+        Parse and store experiment_configs.
+
+        For now experiment_configs is just a list of tuples of the form
+            (env_config, agent_config, iomanager_config),
+        where each entry is a dictionary, and each tuple completely specifies
+        a trial to be run.
         """
         raise NotImplementedError
 
-    def register_resources(self, resource_configs):
+    def register_ray_configs(self, ray_configs):
         """
-        Parse resource_configs for use by RayController.
+        Parse and store ray_configs.
+
+        For now ray_configs is simply a dictionary of the form
+            (num_cpus, num_gpus, cpus_per_trial, gpus_per_trial).
+        num_cpus and num_gpus are needed when starting Ray in RayController,
+        while cpus_per_trial and gpus_per_trial are needed when defining
+        RayTrialRunner inside TrialConstructor. All four values are needed
+        when checking whether num_cpus and num_gpus are sufficient for
+        cpus_per_trial and gpus_per_trial, given the number of trials
+        specified in experiment_configs.
         """
         raise NotImplementedError
 
-    def provision_resources(self):
+    def verify_configs(self):
         """
         Make sure we have enough resources to run all trials in parallel with
-        the desired number of cpus and gpus per trial.
+        the desired number of cpus and gpus per trial. If not, raise an error.
 
-        If not, either raise an error or enforce alternative provisioning.
+        Check inside experiment_configs to ensure that no two TrialRunners
+        will attempt to write to the same directory. If a conflict is found,
+        raise an error.
 
-        This must be called before TrialConstructor constructs TrialRunners!
+        Once the consistency of ray_configs with experiment_configs has been
+        verified, first shutdown Ray if it is already running, then start up
+        Ray with the desired ray_configs.
+
+        This must be called before initialize_ray() and run_experiment()!
+        """
+        raise NotImplementedError
+
+    def initialize_ray(self):
+        """
+        Initialize Ray with the specified ray_configs. If Ray is already running,
+        first shut it down, then initialize.
+
+        This must be called after verify_configs().
         """
         raise NotImplementedError
 
@@ -287,46 +317,77 @@ class ExperimentRunner:
 
 class RayController:
     """
-    Keeps track of available compute resources. Starts and stops Ray.
+    Starts and stops Ray. Uses the ray_configs stored inside ExperimentRunner
+    to decide how to initialize Ray.
     """
-    def __init__(self):
-        self.num_cpus = None
-        self.num_gpus = None
-        self.cpus_per_task = None
-        self.gpus_per_task = None
+    def __init__(self, experiment_runner):
+        self.experiment_runner = experiment_runner
+        self.ray_running = False
         raise NotImplementedError
 
-    def register_resources(self, resources):
+    def _get_ray_init_configs(self):
+        """
+        Retrieve key-value pairs from ray_configs in EnvironmentRunner
+        that must be passed to ray.init() in start_ray().
+        """
         raise NotImplementedError
 
     def start_ray(self):
-        raise NotImplementedError
+        """
+        Initialize Ray with the desired ray_configs in EnvironmentRunner.
+        """
+        ray.init(**self._get_ray_init_configs())
+        self.ray_running = ray.is_initialized()
+        assert self.ray_running, "Ray was not initialized for some reason!"
 
     def stop_ray(self):
-        raise NotImplementedError
+        """
+        Shut down Ray.
+        """
+        assert self.ray_running, "Ray must be running in order to be shut down"
+        ray.shutdown()
 
 
 class TrialConstructor:
     """
-    Using the experiment_configs parsed by ExperimentRunner, creates
-    corresponding TrialRunners to be handed off to TrialCoordinator.
+    Using the experiment_configs and ray_configs stored inside
+    ExperimentRunner, creates corresponding RayTrialRunners to be handed off
+    to TrialCoordinator.
     """
-    def __init__(self):
+    def __init__(self, experiment_runner):
+        self.experiment_runner = experiment_runner
+        self.RayTrialRunner = None
         self.env_constructor = EnvConstructor()
         self.agent_constructor = AgentConstructor()
         self.iomanager_constructor = IOManagerConstructor()
-        self.experiment_configs = None
         raise NotImplementedError
 
-    def register_configs(self, experiment_configs):
+    def _get_ray_actor_configs(self):
         """
-        Register experiment_configs for use in creating TrialRunners.
+        Retrieve key-value pairs from ray_configs in ExperimentRunner that
+        need to be passed to @ray.remote in define_ray_trial_runner().
         """
         raise NotImplementedError
+
+    def define_ray_trial_runner(self):
+        """
+        Define the RayTrialRunner Ray Actor with the configuration
+        (e.g. num_cpus, num_gpus) specified in ExperimentRunner's ray_configs.
+
+        Must be called before create_trials().
+        """
+        @ray.remote(**self._get_ray_actor_configs())
+        class RayTrialRunner(TrialRunner):
+            def __init__(self, env, agent, io_manager, **kwargs):
+                super().__init__(env, agent, io_manager, **kwargs)
+
+        self.RayTrialRunner = RayTrialRunner
 
     def create_trials(self):
         """
-        Create TrialRunners and return a list of their 
+        Create RayTrialRunners and return a list of their Ray object ids.
+
+        Must be called after define_ray_trial_runner().
         """
         raise NotImplementedError
 
@@ -366,9 +427,10 @@ class IOManagerConstructor:
 
 class TrialCoordinator:
     """
-    Coordinates parallelization and execution of trials.
+    Coordinates execution of trials.
     """
-    def __init__(self):
+    def __init__(self, experiment_runner):
+        self.experiment_runner = experiment_runner
         self.trials = None
         self.resources = None
         raise NotImplementedError
@@ -376,19 +438,6 @@ class TrialCoordinator:
     def gather_trials(self, trials):
         """
         Store list of TrialRunners to be run.
-        """
-        raise NotImplementedError
-
-    def check_io_conflicts(self):
-        """
-        Check for conflicting IOManager output directories. We don't want
-        multiple TrialRunners trying to write to the same directory.
-        """
-        raise NotImplementedError
-
-    def register_resources(self, resource_configs):
-        """
-        Take note of the resources Ray is to be initialized with.
         """
         raise NotImplementedError
 
