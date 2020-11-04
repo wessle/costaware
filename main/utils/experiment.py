@@ -252,8 +252,7 @@ class ExperimentRunner:
     def __init__(self):
         self.experiment_configs = None
         self.ray_configs = None
-        self.RayController = RayController(self)
-        raise NotImplementedError
+        self.ray_controller = RayController(self)
 
     def register_experiment_configs(self, experiment_configs):
         """
@@ -264,7 +263,7 @@ class ExperimentRunner:
         where each entry is a dictionary, and each tuple completely specifies
         a trial to be run.
         """
-        raise NotImplementedError
+        self.experiment_configs = experiment_configs
 
     def register_ray_configs(self, ray_configs):
         """
@@ -282,7 +281,8 @@ class ExperimentRunner:
         cpus_per_trial and gpus_per_trial, given the number of trials
         specified in experiment_configs.
         """
-        raise NotImplementedError
+        self.ray_configs = ray_configs
+        self.__dict__.update(self.ray_configs)
 
     def verify_configs(self):
         """
@@ -295,7 +295,19 @@ class ExperimentRunner:
 
         This must be called before initialize_ray() and run_experiment()!
         """
-        raise NotImplementedError
+        sufficient_cpus = len(self.experiment_configs) * self.cpus_per_trial \
+                <= self.num_cpus
+        sufficient_gpus = len(self.experiment_configs) * self.cgus_per_trial \
+                <= self.num_cgus
+
+        assert sufficient_cpus and sufficient_gpus, 'Not enough resources.'
+        
+        output_dirs = [trial_tuple[2]['output_dir'] for trial_tuple in \
+                      self.experiment_configs]
+
+        assert len(set(output_dirs)) == len(self.experiment_configs), \
+                'Each trial must write to a distinct output directory.'
+
 
     def initialize_ray(self):
         """
@@ -304,13 +316,13 @@ class ExperimentRunner:
 
         This must be called after verify_configs() and before run_experiment().
         """
-        raise NotImplementedError
+        self.ray_controller.start_ray()
 
     def shutdown_ray(self):
         """
         Shut Ray down.
         """
-        raise NotImplementedError
+        self.ray_controller.stop_ray()
 
     def run_experiment(self):
         """
@@ -337,7 +349,14 @@ class ExperimentRunner:
         verify_configs should be called on the current experiment_configs and
         ray_configs to ensure they are compatible.
         """
-        raise NotImplementedError
+        trial_constructor = TrialConstructor(self)
+        trial_coordinator = TrialCoordinator(self)
+
+        trial_constructor.define_ray_trial_runner()
+        trials = trial_constructor.create_trials()
+
+        trial_coordinator.gather_trials(trials)
+        trial_coordinator.launch_trials()
 
 
 class RayController:
@@ -348,14 +367,14 @@ class RayController:
     def __init__(self, experiment_runner):
         self.experiment_runner = experiment_runner
         self.ray_running = False
-        raise NotImplementedError
 
     def _get_ray_init_configs(self):
         """
         Retrieve key-value pairs from ray_configs in EnvironmentRunner
         that must be passed to ray.init() in start_ray().
         """
-        raise NotImplementedError
+        ray_configs = self.experiment_runner.ray_configs
+        return {key: ray_configs[key] for key in ['num_cpus', 'num_gpus']}
 
     def start_ray(self):
         """
@@ -385,14 +404,16 @@ class TrialConstructor:
         self.env_constructor = EnvConstructor()
         self.agent_constructor = AgentConstructor()
         self.iomanager_constructor = IOManagerConstructor()
-        raise NotImplementedError
 
     def _get_ray_actor_configs(self):
         """
         Retrieve key-value pairs from ray_configs in ExperimentRunner that
         need to be passed to @ray.remote in define_ray_trial_runner().
         """
-        raise NotImplementedError
+        ray_configs = self.experiment_runner.ray_configs
+        keys = ['num_cpus', 'num_gpus']
+        vals = [ray_configs[key] for key in ['cpus_per_trial', 'gpus_per_trial']]
+        return dict(zip(keys, vals))
 
     def define_ray_trial_runner(self):
         """
@@ -414,7 +435,17 @@ class TrialConstructor:
 
         Must be called after define_ray_trial_runner().
         """
-        raise NotImplementedError
+        experiment_configs = self.experiment_runner.experiment_configs
+        trials = []
+        for trial_tuple in experiment_configs:
+            env_config, agent_config, iomanager_config = trial_tuple
+            env = self.env_constructor.create_env(env_config)
+            agent = self.agent_constructor.create_agent(agent_config)
+            iomanager = self.iomanager_constructor.create_iomanager(
+                iomanager_config)
+            trials.append(self.RayTrialRunner.remote(env, agent, iomanager))
+
+        return trials
 
 
 class EnvConstructor:
@@ -457,17 +488,21 @@ class TrialCoordinator:
     def __init__(self, experiment_runner):
         self.experiment_runner = experiment_runner
         self.trials = None
-        self.resources = None
-        raise NotImplementedError
 
     def gather_trials(self, trials):
         """
-        Store list of TrialRunners to be run.
+        Store list of RayTrialRunners to be run.
         """
-        raise NotImplementedError
+        self.trials = trials
 
     def launch_trials(self):
         """
-        Launch the experiment.
+        Launch the experiment. Catch the return values and return them.
+
+        This call is where most of the time will be spent during a call
+        to ExperimentRunner.run_experiment(). ray.get() is blocking and
+        will not return until all RayTrialRunners have finished executing.
         """
-        raise NotImplementedError
+        return_vals = ray.get(self.trials)
+
+        return return_vals
