@@ -271,7 +271,10 @@ class ExperimentRunner:
         Parse and store ray_configs.
 
         For now ray_configs is simply a dictionary of the form
-            (num_cpus, num_gpus, cpus_per_trial, gpus_per_trial).
+            {'num_cpus': int,
+             'num_gpus': int,
+             'cpus_per_trial': int,
+             'gpus_per_trial': int}
         num_cpus and num_gpus are needed when starting Ray in RayController,
         while cpus_per_trial and gpus_per_trial are needed when defining
         RayTrialRunner inside TrialConstructor. All four values are needed
@@ -290,10 +293,6 @@ class ExperimentRunner:
         will attempt to write to the same directory. If a conflict is found,
         raise an error.
 
-        Once the consistency of ray_configs with experiment_configs has been
-        verified, first shutdown Ray if it is already running, then start up
-        Ray with the desired ray_configs.
-
         This must be called before initialize_ray() and run_experiment()!
         """
         raise NotImplementedError
@@ -303,14 +302,40 @@ class ExperimentRunner:
         Initialize Ray with the specified ray_configs. If Ray is already running,
         first shut it down, then initialize.
 
-        This must be called after verify_configs().
+        This must be called after verify_configs() and before run_experiment().
+        """
+        raise NotImplementedError
+
+    def shutdown_ray(self):
+        """
+        Shut Ray down.
         """
         raise NotImplementedError
 
     def run_experiment(self):
         """
-        Use RayController, TrialConstructor, and TrialCoordinator to set up
-        and run the experiment.
+        Run the experiment specified by the current experiment_configs. Ray must
+        already be initialized with the desired ray_configs and verify_configs()
+        should already have been called.
+
+        First, a TrialConstructor and a TrialCoordinator are created. Next,
+        TrialConstructor defines the RayTrialRunner object according to the
+        ray_configs. It's necessary to define a new RayTrialRunner every time
+        the experiment is run in order to allocate it the user-specified resources
+        (e.g. num_cpus, num_gpus) contained in ray_configs. Third,
+        TrialConstructor constructs a RayTrialRunner remote actor for each of the
+        trials defined by experiment_configs. The Ray object IDs for the
+        RayTrialRunners are then handed off to the TrialCoordinator, which
+        stores them and launches them as Ray remote tasks. Once all tasks
+        have been completed (which means all trials have been successfully
+        run and logging data saved to disk), the function returns and it is
+        safe to call shutdown_ray().
+
+        Note that run_experiment() can be called multiple times over the life of
+        ExperimentRunner, potentially on different experiment_configs and
+        ray_configs. The only requirements are that Ray must be running and
+        verify_configs should be called on the current experiment_configs and
+        ray_configs to ensure they are compatible.
         """
         raise NotImplementedError
 
