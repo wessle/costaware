@@ -253,6 +253,8 @@ class ExperimentRunner:
         self.experiment_configs = None
         self.ray_configs = None
         self.ray_controller = RayController(self)
+        self.trial_constructor = None
+        self.trial_coordinator = None
 
     def register_experiment_configs(self, experiment_configs):
         """
