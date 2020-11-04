@@ -356,7 +356,9 @@ class ExperimentRunner:
         trials = trial_constructor.create_trials()
 
         trial_coordinator.gather_trials(trials)
-        trial_coordinator.launch_trials()
+        return_vals = trial_coordinator.launch_trials()
+
+        return return_vals
 
 
 class RayController:
