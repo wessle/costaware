@@ -349,14 +349,14 @@ class ExperimentRunner:
         verify_configs should be called on the current experiment_configs and
         ray_configs to ensure they are compatible.
         """
-        trial_constructor = TrialConstructor(self)
-        trial_coordinator = TrialCoordinator(self)
+        self.trial_constructor = TrialConstructor(self)
+        self.trial_coordinator = TrialCoordinator(self)
 
-        trial_constructor.define_ray_trial_runner()
-        trials = trial_constructor.create_trials()
+        self.trial_constructor.define_ray_trial_runner()
+        trials = self.trial_constructor.create_trials()
 
-        trial_coordinator.gather_trials(trials)
-        return_vals = trial_coordinator.launch_trials()
+        self.trial_coordinator.gather_trials(trials)
+        return_vals = self.trial_coordinator.launch_trials()
 
         return return_vals
 
