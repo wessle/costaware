@@ -4,7 +4,7 @@ import yaml
 import numpy as np
 import ray
 import matplotlib.pyplot as plt
-from collections import deque
+from collections import deque, namedtuple
 from itertools import product
 
 
@@ -220,7 +220,15 @@ class TrialRunner:
         return ratios
 
 
-# Skeletons for eventual ExperimentRunner class
+# Definitions for ExperimentRunner class
+
+# Namedtuple for saving configuration dictionaries corresponding to trials.
+# Each element in a ConfigTuple is a dictionary, e.g. the entry indexed
+# by 'env_config' is a dictionary containing all info necessary to create
+# an environment. Using a namedtuple ensures that the elements in each
+# tuple can be accessed by name, which increases extensibility.
+ConfigTuple = namedtuple('ConfigTuple',
+                         ['env_config', 'agent_config', 'iomanager_config'])
 
 class ConfigGenerator:
     """
@@ -228,8 +236,10 @@ class ConfigGenerator:
     ExperimentRunner is to carry out.
 
     Stores an experiment specification, which will likely be either a function
-    or file. Generates or returns a list of tuples
-        (env_config, agent_config, iomanager_config)
+    or file. Generates or returns a list of namedtuples
+        ConfigTuple(env_config=env_config,
+                    agent_config=agent_config,
+                    iomanager_config=iomanager_config)
     containing all information needed to create a corresponding TrialRunner.
     """
     def __init__(self, experiment_spec):
@@ -238,7 +248,8 @@ class ConfigGenerator:
     
     def generate_configs(self):
         """
-        Return experiment_configs list or generator.
+        Return experiment_configs list. Each element in the list should be a
+        ConfigTuple.
         """
         raise NotImplementedError
 
@@ -264,9 +275,11 @@ class ExperimentRunner:
         """
         Parse and store experiment_configs.
 
-        For now experiment_configs is just a list of tuples of the form
-            (env_config, agent_config, iomanager_config),
-        where each entry is a dictionary, and each tuple completely specifies
+        For now experiment_configs is just a list of namedtuples of the form
+            ConfigTuple(env_config=env_config,
+                        agent_config=agent_config,
+                        iomanager_config=iomanager_config)
+        where each entry is a dictionary, and each namedtuple completely specifies
         a trial to be run.
         """
         self.experiment_configs = experiment_configs
@@ -308,8 +321,8 @@ class ExperimentRunner:
 
         assert sufficient_cpus and sufficient_gpus, 'Not enough resources.'
         
-        output_dirs = [trial_tuple[2]['output_dir'] for trial_tuple in \
-                      self.experiment_configs]
+        output_dirs = [trial_tuple.iomanager_config['output_dir'] \
+                       for trial_tuple in self.experiment_configs]
 
         assert len(set(output_dirs)) == len(self.experiment_configs), \
                 'Each trial must write to a distinct output directory.'
@@ -446,7 +459,10 @@ class TrialConstructor:
         experiment_configs = self.experiment_runner.experiment_configs
         trials = []
         for trial_tuple in experiment_configs:
-            env_config, agent_config, iomanager_config = trial_tuple
+            env_config, agent_config, iomanager_config = \
+                    trial_tuple.env_config, \
+                    trial_tuple.agent_config, \
+                    trial_tuple.iomanager_config
             env = self.env_constructor.create_env(env_config)
             agent = self.agent_constructor.create_agent(agent_config)
             iomanager = self.iomanager_constructor.create_iomanager(
