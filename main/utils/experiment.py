@@ -463,46 +463,47 @@ class TrialConstructor:
                     trial_tuple.env_config, \
                     trial_tuple.agent_config, \
                     trial_tuple.iomanager_config
-            env = self.env_constructor.create_env(env_config)
-            agent = self.agent_constructor.create_agent(agent_config)
+            env = self.env_constructor.create(env_config)
+            agent = self.agent_constructor.create(agent_config)
             iomanager = self.iomanager_constructor.create_iomanager(
                 iomanager_config)
             trials.append(self.RayTrialRunner.remote(env, agent, iomanager))
 
         return trials
 
+    
+class Constructor:
+    """
+    Constructor super class
+    """
+    def create(self, config):
+        """
+        Params
+        ------
+        config : dict
+            'class'  : Python class 
+            'args'   : constructor args (list)
+            'kwargs' : constructor kwargs  (dict)
+        """
+        return config['class'](*config['args'], **config['kwargs'])
 
-class EnvConstructor:
+
+class EnvConstructor(Constructor):
     """
     Constructs environments.
     """
-    def __init__(self):
-        raise NotImplementedError
-
-    def create_env(self, env_config):
-        raise NotImplementedError
 
 
-class AgentConstructor:
+class AgentConstructor(Constructor):
     """
     Constructs agents.
     """
-    def __init__(self):
-        raise NotImplementedError
-
-    def create_agent(self, agent_config):
-        raise NotImplementedError
 
 
-class IOManagerConstructor:
+class IOManagerConstructor(Constructor):
     """
     Constructs IOManagers.
     """
-    def __init__(self):
-        raise NotImplementedError
-
-    def create_iomanager(self, iomanager_config):
-        raise NotImplementedError
 
 
 class TrialCoordinator:
