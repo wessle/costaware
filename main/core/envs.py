@@ -3,6 +3,7 @@ import numpy as np
 from gym import spaces
 
 from main.utils import moments, ecdf
+import main.utils.defaults as defaults
 
 
 # Portfolio optimization environments
@@ -323,3 +324,39 @@ class MDPEnv(gym.Env):
         """
         """
         self.state = self.observation_space.sample()
+
+
+class RandomMDPEnv(MDPEnv):
+
+    def __init__(self, num_states, num_actions, rewards, costs,
+                 transition_seed=None, training_seed=None):
+        
+        np.random.seed(transition_seed)
+    
+        states  = [s for s in range(num_states)]
+        actions = [a for a in range(num_actions)]
+    
+        probs = {}
+        for elem in product(states, actions):
+            dist = np.random.random(num_states)
+            probs[elem] = dist / np.sum(dist)
+    
+        def transition_matrix(state, action):
+            return probs[(state, action)]
+    
+        if isinstance(rewards, str):
+            rewards = defaults.__dict__[rewards]
+
+        if isinstance(costs, str):
+            costs = defaults.__dict__[costs]
+    
+        np.random.seed(training_seed)
+    
+        super().__init__(
+            states, 
+            actions, 
+            transition_matrix, 
+            rewards, 
+            costs
+        )
+
