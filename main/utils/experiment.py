@@ -9,40 +9,6 @@ from itertools import product
 
 
 import main.core.envs as envs
-import main.utils.defaults as defaults
-
-
-def generate_mdp_env(num_states, num_actions, rewards, costs,
-                         transition_seed=None, training_seed=None):
-        """
-        Construct an arbitrary MDP (by selecting a transition probability matrix
-        over the space of all such matrices of given dimension).
-        """
-        np.random.seed(transition_seed)
-    
-        states  = list(range(num_states))
-        actions = list(range(num_actions))
-    
-        probs = {}
-        for elem in product(states, actions):
-            dist = np.random.random(num_states)
-            probs[elem] = dist / np.sum(dist)
-    
-        def transition_matrix(state, action):
-            return probs[(state, action)]
-    
-        if isinstance(rewards, str):
-            rewards = defaults.__dict__[rewards]
-
-        if isinstance(costs, str):
-            costs = defaults.__dict__[costs]
-    
-        np.random.seed(training_seed)
-    
-        env = envs.MDPEnv(states, actions, transition_matrix, rewards, costs)
-    
-        return states, actions, env
-
 
 class IOManager:
     """
@@ -244,14 +210,17 @@ class ConfigGenerator:
     """
     def __init__(self, experiment_spec):
         self.experiment_spec = experiment_spec
-        raise NotImplementedError
     
     def generate_configs(self):
         """
         Return experiment_configs list. Each element in the list should be a
         ConfigTuple.
         """
-        raise NotImplementedError
+        return ConfigTuple(
+            env_config=self.experiment_spec['env'],
+            agent_config=self.experiment_spec['agent'],
+            iomanager_config=self.experiment_spec['iomanager'],
+        )
 
 class ExperimentRunner:
     """
@@ -326,7 +295,6 @@ class ExperimentRunner:
 
         assert len(set(output_dirs)) == len(self.experiment_configs), \
                 'Each trial must write to a distinct output directory.'
-
 
     def initialize_ray(self):
         """
@@ -458,7 +426,7 @@ class TrialConstructor:
         """
         experiment_configs = self.experiment_runner.experiment_configs
         trials = []
-        for trial_tuple in experiment_configs:
+       for trial_tuple in experiment_configs:
             env_config, agent_config, iomanager_config = \
                     trial_tuple.env_config, \
                     trial_tuple.agent_config, \
