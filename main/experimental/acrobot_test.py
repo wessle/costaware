@@ -26,7 +26,7 @@ num_episodes = 100
 episode_len = 500
 
 
-# 11/5 better...
+# 11/6 better...
 def cost_fn(state):
     """
     A state of [1, 0, 1, 0, ..., ...] means that both links point downwards.
@@ -36,7 +36,6 @@ def cost_fn(state):
     if state[0] > 0:
         # First line is below horizontal, maximize the second angle
         # (between first and second link)
-        #cost = max(0.8-state[0], 0.1)**2
         cost = max(0.6 - state[2]/1.5, 0.1) ** 2
     else:
         # First link is above horizontal, give higher cost

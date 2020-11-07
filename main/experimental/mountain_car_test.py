@@ -25,7 +25,7 @@ episode_len = 500
 
 # Define a cost function to be used in our cost-aware environment
 # Working cost function
-# TODO Not stable
+# 11/6 working
 def cost_fn(state):
     c = max(state[0] + 0.7, 0.1) ** 2
     return max(state[0] + 0.7, 0.1) ** 2
