@@ -12,7 +12,7 @@ buffer_maxlen = 100000
 batchsize = 256
 q_lr = 0.001
 rho_lr = 0.0001
-eps = 0.05
+eps = 0.01
 enable_cuda = False
 rho_init = 0
 grad_clip_radius = None
@@ -27,7 +27,6 @@ episode_len = 500
 # Working cost function
 # 11/6 working
 def cost_fn(state):
-    c = max(state[0] + 0.7, 0.1) ** 2
     return max(state[0] + 0.7, 0.1) ** 2
 
 
