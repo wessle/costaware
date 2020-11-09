@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 from numpy import cos
 import wesutils
@@ -8,23 +10,23 @@ from main.core import agents
 from main.experimental.experimental_envs import AcrobotCostAwareEnv
 
 # network and agent parameters
-Q_hidden_units = 256
+Q_hidden_units = 128
 buffer_maxlen = 100000
-batchsize = 256
-q_lr = 0.001
+batchsize = 128
+q_lr = 0.005
 rho_lr = 0.0001
-eps = 0.1
+eps = 0.05
 enable_cuda = False
 rho_init = 0
 grad_clip_radius = None
 rho_clip_radius = None
 
 # experiment parameters
-num_episodes = 500
+num_episodes = 100
 episode_len = 500
 
 
-# TODO: Learning outcome is weird (not stabilizing)
+# 11/6 better...
 def cost_fn(state):
     """
     A state of [1, 0, 1, 0, ..., ...] means that both links point downwards.
@@ -34,18 +36,18 @@ def cost_fn(state):
     if state[0] > 0:
         # First line is below horizontal, maximize the second angle
         # (between first and second link)
-        cost = max(1-state[2], 0.1) ** 2
+        cost = max(0.6 - state[2]/1.5, 0.1) ** 2
     else:
-        # first link is above horizontal, give higher cost
+        # First link is above horizontal, give higher cost
         # for higher height reached
-        cost = (1+height) ** 2
+        cost = max(1 + height, 1) ** 2
     return cost
 
 
 if __name__ == '__main__':
 
     # create env
-    env = AcrobotCostAwareEnv(cost_fn = cost_fn)
+    env = AcrobotCostAwareEnv(cost_fn=cost_fn)
     env.reset()
 
     # gather info about the env
@@ -70,7 +72,7 @@ if __name__ == '__main__':
     # create formats for printing output
     fmt = '{:^5s} | {:^10s} | {:^10s} | {:^10s} | {:^10s} | {:^10s} | {:^10s}'
     fmt_vals = '{:^5} | {:^10.2f} | {:^10.2f} | {:^10.2f} | {:^10.2f} | ' + \
-            '{:^10.2f} | {:^10.2f}'
+               '{:^10.2f} | {:^10.2f}'
 
     # run the experiment
     end_values, rhos = [], []
@@ -80,7 +82,7 @@ if __name__ == '__main__':
         for _ in range(episode_len):
             env_state = env.state
             if len(env_state) > 4:
-                env_state = state[0:4] # Only use the first 4
+                env_state = state[0:4]  # Only use the first 4
             action = agent.sample_action(env_state)
             state, reward_cost_tuple, done, _ = env.step(action)
             reward, cost = reward_cost_tuple
@@ -98,6 +100,6 @@ if __name__ == '__main__':
             print(fmt.format(
                 'ep', 'rew', 'cost', 'time(s)', 'rho', 'val_est', 'Vsref'))
         print(fmt_vals.format(i, *end_values[-1], time() - t0,
-            rhos[-1], agent.ref_val_est, agent.ref_state_val()))
+                              rhos[-1], agent.ref_val_est, agent.ref_state_val()))
 
         env.reset()

@@ -12,7 +12,7 @@ buffer_maxlen = 100000
 batchsize = 256
 q_lr = 0.001
 rho_lr = 0.0001
-eps = 0.1
+eps = 0.01
 enable_cuda = False
 rho_init = 0
 grad_clip_radius = None
@@ -25,17 +25,9 @@ episode_len = 500
 
 # Define a cost function to be used in our cost-aware environment
 # Working cost function
+# 11/6 working
 def cost_fn(state):
     return max(state[0] + 0.7, 0.1) ** 2
-
-# TODO NOT working
-def cost_fn1(state):
-    position = state[0]
-    if position >= 0:
-        cost = (position+1.3) ** 2
-    else:
-        cost = 0.1**2
-    return cost
 
 
 if __name__ == '__main__':
