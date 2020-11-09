@@ -1,5 +1,6 @@
 import os 
 import yaml
+import warnings
 
 import numpy as np
 import ray
@@ -15,7 +16,12 @@ class IOManager:
     """
 
     def __init__(self, output_dir):
-        os.mkdir(output_dir)
+        try:
+            os.mkdir(output_dir)
+        except FileExistsError:
+            msg = f'Directory {output_dir} already exists! ' + \
+                    'Writing into it, but this may overwrite existing data.'
+            warnings.warn(msg.format(output_dir))
         self.output_dir = output_dir
 
     def to_stdout(self, msg):
