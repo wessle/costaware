@@ -1,5 +1,6 @@
 import os 
 import yaml
+import warnings
 
 import numpy as np
 import ray
@@ -14,8 +15,13 @@ class IOManager:
     """
     """
 
-    def __init__(self, output_dir, **kwargs):
-        os.mkdir(output_dir)
+    def __init__(self, output_dir):
+        try:
+            os.mkdir(output_dir)
+        except FileExistsError:
+            msg = f'Directory {output_dir} already exists! ' + \
+                    'Writing into it, but this may overwrite existing data.'
+            warnings.warn(msg.format(output_dir))
         self.output_dir = output_dir
 
         self.interval   = 100000                      or kwargs.get('interval')
@@ -174,7 +180,10 @@ class TrialRunner:
 # an environment. Using a namedtuple ensures that the elements in each
 # tuple can be accessed by name, which increases extensibility.
 ConfigTuple = namedtuple('ConfigTuple',
-                         ['env_config', 'agent_config', 'iomanager_config'])
+                         ['env_config',
+                          'agent_config',
+                          'iomanager_config',
+                          'trial_config'])
 
 class ConfigGenerator:
     """
@@ -190,17 +199,14 @@ class ConfigGenerator:
     """
     def __init__(self, experiment_spec):
         self.experiment_spec = experiment_spec
+        raise NotImplementedError
     
     def generate_configs(self):
         """
         Return experiment_configs list. Each element in the list should be a
         ConfigTuple.
         """
-        return ConfigTuple(
-            env_config=self.experiment_spec['env'],
-            agent_config=self.experiment_spec['agent'],
-            iomanager_config=self.experiment_spec['iomanager'],
-        )
+        raise NotImplementedError
 
 class ExperimentRunner:
     """
@@ -265,12 +271,13 @@ class ExperimentRunner:
         """
         sufficient_cpus = len(self.experiment_configs) * self.cpus_per_trial \
                 <= self.num_cpus
-        sufficient_gpus = len(self.experiment_configs) * self.cgus_per_trial \
-                <= self.num_cgus
+        sufficient_gpus = len(self.experiment_configs) * self.gpus_per_trial \
+                <= self.num_gpus
 
         assert sufficient_cpus and sufficient_gpus, 'Not enough resources.'
         
-        output_dirs = [trial_tuple.iomanager_config['output_dir'] \
+        # TODO Find better way to retrieve output_dir than indexing like this!
+        output_dirs = [trial_tuple.iomanager_config['args'][0] \
                        for trial_tuple in self.experiment_configs]
 
         assert len(set(output_dirs)) == len(self.experiment_configs), \
@@ -406,16 +413,18 @@ class TrialConstructor:
         """
         experiment_configs = self.experiment_runner.experiment_configs
         trials = []
-       for trial_tuple in experiment_configs:
-            env_config, agent_config, iomanager_config = \
+        for trial_tuple in experiment_configs:
+            env_config, agent_config, iomanager_config, trial_config = \
                     trial_tuple.env_config, \
                     trial_tuple.agent_config, \
-                    trial_tuple.iomanager_config
+                    trial_tuple.iomanager_config, \
+                    trial_tuple.trial_config
             env = self.env_constructor.create(env_config)
             agent = self.agent_constructor.create(agent_config)
-            iomanager = self.iomanager_constructor.create_iomanager(
+            iomanager = self.iomanager_constructor.create(
                 iomanager_config)
-            trials.append(self.RayTrialRunner.remote(env, agent, iomanager))
+            trials.append(self.RayTrialRunner.remote(
+                env, agent, iomanager, **trial_config))
 
         return trials
 

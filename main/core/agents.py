@@ -54,7 +54,7 @@ class DeepRVIQLearningBasedAgent(DeepRLAgent):
                  grad_clip_radius=None,
                  rho_init=0.0, rho_clip_radius=None):
 
-        self.buffer = wesutils.Buffer(buffer_maxlen)
+        self.buffer = wesutils.Buffer(maxlen=buffer_maxlen)
         self.N = batchsize
         self.actions = actions # numpy array of actions
         self.q = q_network
@@ -409,7 +409,9 @@ class TabularQAgent:
         self.rho_lr = rho_lr
         self.rho = rho_init
         self.eps = eps
-        self.__Q_table = np.zeros((len(states), len(actions)))
+        # self.__Q_table = np.zeros((len(states), len(actions)))
+        self.__Q_table = [[0. for _ in range(len(actions))] \
+                          for _ in range(len(states))]
         self.__ref_state = ref_state if ref_state is not None \
                 else self.states[0]
 
