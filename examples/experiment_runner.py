@@ -1,4 +1,5 @@
 import argparse
+import importlib
 
 import data
 import main.utils.experiment as experiment
@@ -7,7 +8,7 @@ from main.core.agents import TabularQAgent
 
 
 parser = argparse.ArgumentParser(
-    'Example script showing ExperimentRunner works on MDPEnvs'
+    'python experiment_runner_example.py'
 )
 
 parser.add_argument('--num_trials', type=int, default=2,
