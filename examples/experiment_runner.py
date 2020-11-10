@@ -1,7 +1,6 @@
 import argparse
 import importlib
 
-import data
 import main.utils.experiment as experiment
 from main.core.envs import RandomMDPEnv
 from main.core.agents import TabularQAgent
@@ -16,7 +15,7 @@ parser.add_argument('--num_trials', type=int, default=2,
 parser.add_argument('--cpus_per_trial', type=int, default=1,
                     help='Number of CPUs to allocate to each trial')
 parser.add_argument('--output_dir', type=str,
-                    default=f'{data.__path__[0]}/experiment_runner_example',
+                    default='experiment_runner_example_data',
                     help='Directory to store trial data in')
 
 args = parser.parse_args()
