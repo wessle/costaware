@@ -6,8 +6,6 @@ from importlib import import_module
 import main.utils.experiment as experiment
 
 
-CONFIG_FILENAME = 'config.yml'
-
 parser = argparse.ArgumentParser(
     'python experiment_runner_config_example.py'
 )
@@ -19,6 +17,8 @@ parser.add_argument('--cpus_per_trial', type=int, default=1,
 parser.add_argument('--output_dir', type=str,
                     default='experiment_runner_example',
                     help='Directory to store trial data in')
+parser.add_argument('--config', type=str, default='config.yml',
+                    help='Filename of YAML file containing trial configs')
 
 args = parser.parse_args()
 
@@ -26,7 +26,7 @@ args = parser.parse_args()
 if __name__ == '__main__':
 
     # read in YAML config file
-    with open(CONFIG_FILENAME, 'r') as f:
+    with open(args.config, 'r') as f:
         config = yaml.safe_load(f)
 
 
