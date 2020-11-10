@@ -14,22 +14,84 @@ class IOManager:
     """
     """
 
-    def __init__(self, output_dir):
+    def __init__(self, output_dir, **kwargs):
         os.mkdir(output_dir)
         self.output_dir = output_dir
 
-    def to_stdout(self, msg):
-        print(msg)
+        self.interval   = 100000                      or kwargs.get('interval')
+        self.agent_name = 'UnspecifiedAgent'          or kwargs.get('agent_name')
+        self.filename   = f'{self.agent_name}_ratios' or kwargs.get('filename')
 
-    def save_yml(self, filename, dictionary):
-        with open(os.path.join(self.output_dir, filename), 'w') as out:
-            out.write(yaml.safe_dump(dictionary))
+    def out(self, **kwargs):
+        defaults = {
+            'step'        : 0,
+            'stdout'      : False,
+            'dictionary'  : {},
+            'array'       : None,
+            'fig'         : True,
+            'plot_kwargs' : {}
+        }
+        defaults.update(kwargs)
 
-    def save_npy(self, filename, array):
-        np.save(os.path.join(self.output_dir, filename), array)
+        if not kwargs['interval'] or kwargs['step'] % self.interval == 0:
+            if kwargs['message']:
+                self.to_stdout(**kwargs)
+            if kwargs['dictionary']:
+                self.save_yml(**kwargs)
+            if kwargs['array'] is not None:
+                self.save_npy(**kwargs)
+            if kwargs['plot']:
+                self.save_plt(**kwargs)
 
-    def save_plt(self, filename, fig, **kwargs):
-        fig.savefig(os.path.join(self.output_dir, filename), **kwargs) 
+    def to_stdout(self, **kwargs):
+        message = ' '.join([
+            f'{self.agent_name}',
+            f'timestep: {kwargs["step"]:7d}',
+            f'(rho={kwargs["value"]:.2f}, state={kwargs["state"]}, action={kwargs["action"]})'
+        ])
+
+        print(message)
+
+    def save_yml(self, **kwargs):
+        yaml_file = os.path.join(self.output_dir, self.filename + '.yml')
+        with open(yaml_file, 'w') as out:
+            out.write(yaml.safe_dump(kwargs['dictionary']))
+
+    def save_npy(self, **kwargs):
+        """
+        This function is called at each step of the training loop to (selectively)
+        log training information to a specified log output during the loop.
+    
+        Any callback with this signature may be used instead, but this is a
+        reasonable default behavior.
+        """
+        npy_file = os.path.join(self.output_dir, self.filename + '.npy')
+        np.save(npy_file, kwargs['array'])
+
+    def save_plt(self, **kwargs):
+        """
+        This function is called at each step of the training loop to (selectively)
+        plot training information to a specified output directory during the loop.
+    
+        Any callback with this signature may be used instead, but this is a
+        reasonable default behavior.
+        """
+
+        defaults = {
+            'xlabel':     'Step',
+            'ylabel':     'Ratio'
+        }
+        defaults.update(kwargs)
+        kwargs = defaults
+
+        fig, ax = plt.subplots()
+
+        ax.plot(np.arange(len(kwargs['array'])), np.array(kwargs['array']))
+        ax.set_xlabel(kwargs['xlabel'])
+        ax.set_ylabel(kwargs['ylabel'])
+
+        plot_file = os.path.join(self.output_dir, self.filename + '.png'), 
+        fig.savefig(plot_file, **kwargs['plot_kwargs']) 
 
 
 class TrialRunner:
@@ -76,78 +138,6 @@ class TrialRunner:
         defaults.update(kwargs)
         self.update(**defaults)
 
-    def update(self, **kwargs):
-        """
-        Sends every specified keyword argument to an attribute of the object.
-        That is, if foo=bar is passed into the kwargs, then after running this
-        method, self.foo == bar
-        """
-        self.__dict__.update(kwargs)
-
-    def stdout_callback(self, **kwargs):
-        """
-        This function is called at each step of the training loop to (selectively)
-        print out training information to stdout during the loop.
-    
-        Any callback with this signature may be used instead, but this is a
-        reasonable default behavior.
-        """
-        defaults = {
-            'ratio': None,
-            'step':  None,
-        }
-        defaults.update(kwargs)
-
-        output_message = ' '.join([
-            f'{self.agent_name}',
-            f'timestep: {kwargs["step"]:7d}',
-            f'(rho={kwargs["ratio"]:.2f}, state={self.agent.state}, action={self.agent.action})'
-        ])
-
-        self.io.to_stdout(output_message)
-    
-    def logger_callback(self, **kwargs):
-        """
-        This function is called at each step of the training loop to (selectively)
-        log training information to a specified log output during the loop.
-    
-        Any callback with this signature may be used instead, but this is a
-        reasonable default behavior.
-        """
-        defaults = {
-            'ratios':     None,  # will break if unchanged, that's good
-        }
-        defaults.update(kwargs)
-
-        filename = f"{self.agent_name}_ratios.npy"
-
-        self.io.save_npy(filename, kwargs['ratios'])
-    
-    def plot_callback(self, **kwargs):
-        """
-        This function is called at each step of the training loop to (selectively)
-        plot training information to a specified output directory during the loop.
-    
-        Any callback with this signature may be used instead, but this is a
-        reasonable default behavior.
-        """
-        defaults = {
-            'ratios':     None,  # will break if unchanged, that's good
-            'xlabel':     'Step',
-            'ylabel':     'Ratio'
-        }
-        defaults.update(kwargs)
-
-        filename = f"{self.agent_name}_ratios.png"
-
-        fig, ax = plt.subplots()
-
-        ax.plot(np.arange(len(kwargs['ratios'])), np.array(kwargs['ratios']))
-        ax.set_xlabel(kwargs['xlabel'])
-        ax.set_ylabel(kwargs['ylabel'])
-
-        self.io.save_plt(filename, fig)
-    
     def train(self):
         """
         Train a predefined agent on an initialized environment for a specified
@@ -165,23 +155,13 @@ class TrialRunner:
             self.agent.update((reward, cost), next_state)
 
             # Next, process the rewards and costs signals
-            rewards.append(reward)
-            costs.append(cost)
+            rewards.append(reward); costs.append(cost)
             ratios.append(np.mean(rewards) / np.mean(costs))
     
-            if step % self.print_interval == 0:  # I/O callbacks
-                if self.stdouting:
-                    self.stdout_callback(step=step, ratio=ratios[-1])
+            self.io.out(stdout=True, step=step, value=ratios[-1],
+                        state=self.env.state, action=action, array=ratios)
     
-                if self.logging:
-                    self.logger_callback(ratios=ratios)
-    
-        
-        if self.logging:  # Final I/O callback
-            self.logger_callback(ratios=ratios)
-
-        if self.plotting:  # Plotting callback
-            self.plot_callback(ratios=ratios)
+        self.io.out(plot=True, array=ratios)
 
         return ratios
 
