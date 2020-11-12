@@ -15,7 +15,7 @@ class IOManager:
     """
     """
 
-    def __init__(self, output_dir):
+    def __init__(self, output_dir, **kwargs):
         try:
             os.mkdir(output_dir)
         except FileExistsError:
@@ -24,46 +24,31 @@ class IOManager:
             warnings.warn(msg.format(output_dir))
         self.output_dir = output_dir
 
-        self.interval   = 100000                      or kwargs.get('interval')
-        self.agent_name = 'UnspecifiedAgent'          or kwargs.get('agent_name')
-        self.filename   = f'{self.agent_name}_ratios' or kwargs.get('filename')
+        self.interval   = kwargs.get('interval')   or 100000
+        self.agent_name = kwargs.get('agent_name') or 'UnspecifiedAgent'
+        self.filename   = kwargs.get('filename')   or f'{self.agent_name}_ratios'
 
-    def out(self, **kwargs):
-        defaults = {
-            'step'        : 0,
-            'stdout'      : False,
-            'dictionary'  : {},
-            'array'       : None,
-            'fig'         : True,
-            'plot_kwargs' : {}
-        }
-        defaults.update(kwargs)
+        print(self.agent_name)
+        print(kwargs['agent_name'])
 
-        if not kwargs['interval'] or kwargs['step'] % self.interval == 0:
-            if kwargs['message']:
-                self.to_stdout(**kwargs)
-            if kwargs['dictionary']:
-                self.save_yml(**kwargs)
-            if kwargs['array'] is not None:
-                self.save_npy(**kwargs)
-            if kwargs['plot']:
-                self.save_plt(**kwargs)
+    def print(self, proceed, **kwargs):
+        if proceed:
+            defaults = {'episode': None,
+                        'step': None,
+                        'ratio': None,
+                        'state': None,
+                        'action': None,}
+            defaults.update(kwargs)
+            kwargs = defaults
+            
+            if True or kwargs['step'] % self.interval == 0:
+                print(' '.join([f'{self.agent_name}',
+                                    f'{kwargs["step"]:7d} / {kwargs["episode"]}',
+                                    f'(rho={kwargs["ratio"]:.2f},',
+                                    f'state={kwargs["state"]},',
+                                    f'action={kwargs["action"]})']))
 
-    def to_stdout(self, **kwargs):
-        message = ' '.join([
-            f'{self.agent_name}',
-            f'timestep: {kwargs["step"]:7d}',
-            f'(rho={kwargs["value"]:.2f}, state={kwargs["state"]}, action={kwargs["action"]})'
-        ])
-
-        print(message)
-
-    def save_yml(self, **kwargs):
-        yaml_file = os.path.join(self.output_dir, self.filename + '.yml')
-        with open(yaml_file, 'w') as out:
-            out.write(yaml.safe_dump(kwargs['dictionary']))
-
-    def save_npy(self, **kwargs):
+    def log(self, proceed, **kwargs):
         """
         This function is called at each step of the training loop to (selectively)
         log training information to a specified log output during the loop.
@@ -71,10 +56,11 @@ class IOManager:
         Any callback with this signature may be used instead, but this is a
         reasonable default behavior.
         """
-        npy_file = os.path.join(self.output_dir, self.filename + '.npy')
-        np.save(npy_file, kwargs['array'])
+        if proceed:
+            npy_file = os.path.join(self.output_dir, self.filename + '.npy')
+            np.save(npy_file, kwargs['ratios'])
 
-    def save_plt(self, **kwargs):
+    def plot(self, proceed, **kwargs):
         """
         This function is called at each step of the training loop to (selectively)
         plot training information to a specified output directory during the loop.
@@ -82,22 +68,28 @@ class IOManager:
         Any callback with this signature may be used instead, but this is a
         reasonable default behavior.
         """
+        if proceed:
+            defaults = {'xlabel': 'Step',
+                        'ylabel': 'Ratio',
+                        'episode': None,
+                        'step': None,
+                        'ratios': None}
+            defaults.update(kwargs)
+            kwargs = defaults
 
-        defaults = {
-            'xlabel':     'Step',
-            'ylabel':     'Ratio'
-        }
-        defaults.update(kwargs)
-        kwargs = defaults
+            fig, ax = plt.subplots()
 
-        fig, ax = plt.subplots()
+            ax.plot(np.arange(len(kwargs['ratios'])), np.array(kwargs['ratios']))
+            ax.set_xlabel(kwargs['xlabel'])
+            ax.set_ylabel(kwargs['ylabel'])
 
-        ax.plot(np.arange(len(kwargs['array'])), np.array(kwargs['array']))
-        ax.set_xlabel(kwargs['xlabel'])
-        ax.set_ylabel(kwargs['ylabel'])
+            plot_file = os.path.join(self.output_dir, self.filename + '.png'), 
+            fig.savefig(plot_file, **kwargs['plot_kwargs']) 
 
-        plot_file = os.path.join(self.output_dir, self.filename + '.png'), 
-        fig.savefig(plot_file, **kwargs['plot_kwargs']) 
+    def save_yml(self, **kwargs):
+        yaml_file = os.path.join(self.output_dir, self.filename + '.yml')
+        with open(yaml_file, 'w') as out:
+            out.write(yaml.safe_dump(kwargs['dictionary']))
 
 
 class TrialRunner:
@@ -133,16 +125,15 @@ class TrialRunner:
         self.io    = io_manager
 
         defaults = {
-            'width':          100,
-            'print_interval': 10_000,
-            'n_steps':        500_000,
-            'logging':        True,
-            'plotting':       False,
-            'stdouting':      True,
-            'agent_name':     type(agent).__name__,
+            'width':      100,
+            'n_steps':    500_000,
+            'log':        True,
+            'plot':       False,
+            'print':      True,
+            'agent_name': type(agent).__name__,
         }
         defaults.update(kwargs)
-        self.update(**defaults)
+        self.__dict__.update(**defaults)
 
     def train(self):
         """
@@ -153,7 +144,9 @@ class TrialRunner:
     
         ratios = []
         rewards, costs = deque(maxlen=self.width), deque(maxlen=self.width)
+        episode = 0
     
+        # for episode in range(self.n_episodes):
         for step in range(self.n_steps):
             # First, process the agent and the environment
             action = self.agent.sample_action(self.env.state)
@@ -164,10 +157,19 @@ class TrialRunner:
             rewards.append(reward); costs.append(cost)
             ratios.append(np.mean(rewards) / np.mean(costs))
     
-            self.io.out(stdout=True, step=step, value=ratios[-1],
-                        state=self.env.state, action=action, array=ratios)
-    
-        self.io.out(plot=True, array=ratios)
+            self.io.print(self.print,
+                episode=episode, step=step, ratio=ratios[-1],
+                state=self.env.state, action=action
+            )
+
+            self.io.log(self.log, episode=episode, step=step, ratios=ratios)
+
+        self.io.print(self.print,
+            episode=episode, step=step, ratio=ratios[-1], state=self.env.state,
+            action=action
+        )
+
+        self.io.plot(self.plot, episode=episode, step=step, ratios=ratios)
 
         return ratios
 

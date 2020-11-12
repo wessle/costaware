@@ -36,11 +36,13 @@ if __name__ == '__main__':
     iomanager_configs = [
         {'class': experiment.IOManager,
          'args': [output_dir],
-         'kwargs': dict()} \
+         'kwargs': {'interval': 10000,
+                    'agent_name': f'{agent_config["class"].__name__}',
+                    'filename': f'{agent_config["class"].__name__}'}} \
         for output_dir in output_dirs]
 
-    trial_config = {'width': 100, 'print_interval': 10000, 'n_steps': 100000,
-                    'logging': True, 'plotting': False, 'stdouting': True}
+    trial_config = {'width': 100, 'n_steps': 100000,
+                    'log': True, 'plot': False, 'print': True}
 
     config_tuples = [experiment.ConfigTuple(
         env_config, agent_config, iomanager_config, trial_config) \
