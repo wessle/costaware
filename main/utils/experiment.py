@@ -40,10 +40,10 @@ class IOManager:
             
             if kwargs['step'] % self.interval == 0:
                 print(' '.join([f'{self.agent_name}',
-                                    f'{kwargs["step"]:7d} / {kwargs["episode"]}',
-                                    f'(rho={kwargs["ratio"]:.2f},',
-                                    f'state={kwargs["state"]},',
-                                    f'action={kwargs["action"]})']))
+                                f'{kwargs["step"]:7d} / {kwargs["episode"]:4d}',
+                                f'(rho={kwargs["ratio"]:.2f},',
+                                f'state={kwargs["state"]},',
+                                f'action={kwargs["action"]})']))
 
     def log(self, dont_skip, **kwargs):
         """
@@ -122,14 +122,13 @@ class TrialRunner:
         self.agent = agent
         self.io    = io_manager
 
-        defaults = {
-            'width':      100,
-            'n_steps':    500_000,
-            'log':        True,
-            'plot':       False,
-            'print':      True,
-            'agent_name': type(agent).__name__,
-        }
+        defaults = {'width': 100,
+                    'n_steps': 500_000,
+                    'n_episodes': 1000,
+                    'log': True,
+                    'plot': False,
+                    'print': True,
+                    'agent_name': type(agent).__name__}
         defaults.update(kwargs)
         self.__dict__.update(**defaults)
 
@@ -138,27 +137,30 @@ class TrialRunner:
         Train a predefined agent on an initialized environment for a specified
         number of steps. Returns the agent's ratio at each step of the training.
         """
-        self.env.reset()
     
         ratios = []
         rewards, costs = deque(maxlen=self.width), deque(maxlen=self.width)
-        episode = 0
     
         # for episode in range(self.n_episodes):
-        for step in range(self.n_steps):
-            # First, process the agent and the environment
-            action = self.agent.sample_action(self.env.state)
-            next_state, (reward, cost), _, _ = self.env.step(action)
-            self.agent.update((reward, cost), next_state)
+        for episode in range(self.n_episodes):
+            self.env.reset()
+            for step in range(self.n_steps):
+                # First, process the agent and the environment
+                action = self.agent.sample_action(self.env.state)
+                next_state, (reward, cost), done, info = self.env.step(action)
+                self.agent.update((reward, cost), next_state)
 
-            # Next, process the rewards and costs signals
-            rewards.append(reward); costs.append(cost)
-            ratios.append(np.mean(rewards) / np.mean(costs))
+                # Next, process the rewards and costs signals
+                rewards.append(reward); costs.append(cost)
+                ratios.append(np.mean(rewards) / np.mean(costs))
     
-            self.io.print(self.print, episode=episode, step=step,
-                          ratio=ratios[-1], state=self.env.state, action=action)
+                self.io.print(self.print, episode=episode, step=step,
+                              ratio=ratios[-1], state=self.env.state, action=action)
 
-            self.io.log(self.log, episode=episode, step=step, ratios=ratios)
+                self.io.log(self.log, episode=episode, step=step, ratios=ratios)
+
+                if done: # Episode is over, start the next one
+                    break
 
         self.io.print(self.print, episode=episode, step=step, ratio=ratios[-1],
                       state=self.env.state, action=action)
