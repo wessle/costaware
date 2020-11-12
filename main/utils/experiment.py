@@ -28,11 +28,8 @@ class IOManager:
         self.agent_name = kwargs.get('agent_name') or 'UnspecifiedAgent'
         self.filename   = kwargs.get('filename')   or f'{self.agent_name}_ratios'
 
-        print(self.agent_name)
-        print(kwargs['agent_name'])
-
-    def print(self, proceed, **kwargs):
-        if proceed:
+    def print(self, dont_skip, **kwargs):
+        if dont_skip:
             defaults = {'episode': None,
                         'step': None,
                         'ratio': None,
@@ -41,14 +38,14 @@ class IOManager:
             defaults.update(kwargs)
             kwargs = defaults
             
-            if True or kwargs['step'] % self.interval == 0:
+            if kwargs['step'] % self.interval == 0:
                 print(' '.join([f'{self.agent_name}',
                                     f'{kwargs["step"]:7d} / {kwargs["episode"]}',
                                     f'(rho={kwargs["ratio"]:.2f},',
                                     f'state={kwargs["state"]},',
                                     f'action={kwargs["action"]})']))
 
-    def log(self, proceed, **kwargs):
+    def log(self, dont_skip, **kwargs):
         """
         This function is called at each step of the training loop to (selectively)
         log training information to a specified log output during the loop.
@@ -56,11 +53,11 @@ class IOManager:
         Any callback with this signature may be used instead, but this is a
         reasonable default behavior.
         """
-        if proceed:
+        if dont_skip:
             npy_file = os.path.join(self.output_dir, self.filename + '.npy')
             np.save(npy_file, kwargs['ratios'])
 
-    def plot(self, proceed, **kwargs):
+    def plot(self, dont_skip, **kwargs):
         """
         This function is called at each step of the training loop to (selectively)
         plot training information to a specified output directory during the loop.
@@ -68,12 +65,13 @@ class IOManager:
         Any callback with this signature may be used instead, but this is a
         reasonable default behavior.
         """
-        if proceed:
+        if dont_skip:
             defaults = {'xlabel': 'Step',
                         'ylabel': 'Ratio',
                         'episode': None,
                         'step': None,
-                        'ratios': None}
+                        'ratios': None,
+                        'plot_kwargs': {}}
             defaults.update(kwargs)
             kwargs = defaults
 
@@ -83,7 +81,7 @@ class IOManager:
             ax.set_xlabel(kwargs['xlabel'])
             ax.set_ylabel(kwargs['ylabel'])
 
-            plot_file = os.path.join(self.output_dir, self.filename + '.png'), 
+            plot_file = os.path.join(self.output_dir, self.filename + '.png')
             fig.savefig(plot_file, **kwargs['plot_kwargs']) 
 
     def save_yml(self, **kwargs):
@@ -157,17 +155,13 @@ class TrialRunner:
             rewards.append(reward); costs.append(cost)
             ratios.append(np.mean(rewards) / np.mean(costs))
     
-            self.io.print(self.print,
-                episode=episode, step=step, ratio=ratios[-1],
-                state=self.env.state, action=action
-            )
+            self.io.print(self.print, episode=episode, step=step,
+                          ratio=ratios[-1], state=self.env.state, action=action)
 
             self.io.log(self.log, episode=episode, step=step, ratios=ratios)
 
-        self.io.print(self.print,
-            episode=episode, step=step, ratio=ratios[-1], state=self.env.state,
-            action=action
-        )
+        self.io.print(self.print, episode=episode, step=step, ratio=ratios[-1],
+                      state=self.env.state, action=action)
 
         self.io.plot(self.plot, episode=episode, step=step, ratios=ratios)
 
