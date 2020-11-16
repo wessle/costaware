@@ -8,7 +8,7 @@ import main.utils.experiment as experiment
 
 
 parser = argparse.ArgumentParser(
-    'python experiment_runner_config_example.py'
+    'python experiment_runner_meta_config.py'
 )
 parser.add_argument('--output_dir', type=str,
                     default=None,
