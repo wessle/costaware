@@ -21,8 +21,7 @@ parser.add_argument('--output_dir', type=str,
 args = parser.parse_args()
 
 if __name__ == '__main__':
-    output_dirs = [f'{args.output_dir}_{i}' \
-                   for i in range(args.num_trials)]
+    output_dirs = [f'{args.output_dir}_{i}' for i in range(args.num_trials)]
 
     env_config = {'class': RandomMDPEnv,
                   'args': [5, 5, 'r1', 'c1'],
@@ -33,23 +32,26 @@ if __name__ == '__main__':
                     'args': [env.states, env.actions, 0.01, 0.001],
                     'kwargs': dict()}
 
-    iomanager_configs = [
-        {'class': experiment.IOManager,
-         'args': [output_dir],
-         'kwargs': {'interval': 1000,
-                    'agent_name': f'{agent_config["class"].__name__}',
-                    'filename': f'{agent_config["class"].__name__}'}} \
-        for output_dir in output_dirs]
+    agent_name = agent_config["class"].__name__
 
-    trial_config = {'width': 100, 'n_steps': 100_000,
+    iomanager_configs = [{'class': experiment.IOManager,
+                          'args': [output_dir],
+                          'kwargs': {
+                              'interval': 1000, 'agent_name': agent_name,
+                              'filename': 'ratios',
+                          }} for output_dir in output_dirs]
+
+    trial_config = {'width': 100, 'n_steps': 10_000, 'n_episodes': 10,
                     'log': True, 'plot': False, 'print': True}
 
     config_tuples = [experiment.ConfigTuple(
-        env_config, agent_config, iomanager_config, trial_config) \
-        for iomanager_config in iomanager_configs]
+            env_config, agent_config, iomanager_config, trial_config
+        ) for iomanager_config in iomanager_configs]
 
-    ray_configs = {'num_cpus': args.num_trials*args.cpus_per_trial, 'num_gpus': 0,
-                   'cpus_per_trial': args.cpus_per_trial, 'gpus_per_trial': 0}
+    ray_configs = {'num_cpus': args.num_trials*args.cpus_per_trial,
+                   'num_gpus': 0,
+                   'cpus_per_trial': args.cpus_per_trial,
+                   'gpus_per_trial': 0}
 
     expr = experiment.ExperimentRunner()
     expr.register_experiment_configs(config_tuples)
