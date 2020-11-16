@@ -7,7 +7,7 @@ from main.core.agents import TabularQAgent
 
 
 parser = argparse.ArgumentParser(
-    'python experiment_runner_example.py'
+    'python experiment_runner.py'
 )
 
 parser.add_argument('--num_trials', type=int, default=2,
@@ -15,7 +15,7 @@ parser.add_argument('--num_trials', type=int, default=2,
 parser.add_argument('--cpus_per_trial', type=int, default=1,
                     help='Number of CPUs to allocate to each trial')
 parser.add_argument('--output_dir', type=str,
-                    default='experiment_runner_example_data',
+                    default='experiment_runner_data',
                     help='Directory to store trial data in')
 
 args = parser.parse_args()

@@ -523,7 +523,8 @@ class SoftmaxPolicy:
     """
     
     def __init__(self, actions):
-        self.actions = actions
+        self.actions = tuple(actions) if isinstance(actions, dict) else \
+                actions
         self.action_indices = {a: i for i, a in enumerate(actions)}
         self.h = None
         
@@ -650,7 +651,7 @@ class LinearACAgent(ContinuingACAgent):
                  mu_floor=0.01,
                  policy_cov_constant=1, value_func_cov_constant=1,
                  grad_clip_radius=None):
-        
+
         state_vector_len = 1 if isinstance(states[0], numbers.Number) \
                 else len(states[0])
 
@@ -659,7 +660,7 @@ class LinearACAgent(ContinuingACAgent):
         
         policy = SoftmaxPolicyLinear(state_vector_len, actions,
                                      policy_cov_constant)
-        
+
         ContinuingACAgent.__init__(self, policy, value_func,
                          policy_lr, v_lr,
                          init_mu_r=init_mu_r, init_mu_c=init_mu_c, mu_lr=mu_lr,

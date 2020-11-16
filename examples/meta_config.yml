@@ -1,0 +1,89 @@
+output_dir: 'test_experiment'
+
+# Ray configs
+ray_config:
+  num_cpus: 4
+  cpus_per_trial: 1
+  num_gpus: 0
+  gpus_per_trial: 0
+
+# Each element in trial_sets contains:
+#   + number of replications to be run
+#   + list of seeds to be used
+#   + a name for the trial_set
+#   + the configs needed to specify the trials
+trial_sets:
+  - trial_set_name: 'Q_trials'
+    num_replications: 2
+    seeds: []
+
+    trial:
+      # Environment configs
+      envs_module_name: 'main.core.envs'
+      env_config:
+        class: 'RandomMDPEnv'
+        args: [5, 5, 'r1', 'c1']  # [num_states, num_actions, reward_fnc, cost_fnc]
+        kwargs:
+          transition_seed: 1066
+      
+      # Agent configs
+      agents_module_name: 'main.core.agents'
+      agent_config:
+        class: 'TabularQAgent'
+        args: [0.01, 0.001] # [q_lr, rho_lr]
+        kwargs: {}
+      
+      # IOManager configs
+      iomanager_config:
+        class: Null  # Will break if not specified at runtime
+        args: ['test_data']  # Output directory
+        kwargs:
+          interval: 1000  # Print interval
+          agent_name: Null  # specified at runtime
+          filename: Null  # specified at runtime
+      
+      # Trial configs
+      trial_config:
+        width: 100
+        n_steps: 20000
+        log: True
+        plot: False
+        print: True
+
+
+  - trial_set_name: 'AC_trials'
+    num_replications: 2
+    seeds: []
+
+    trial:
+      # Environment configs
+      envs_module_name: 'main.core.envs'
+      env_config:
+        class: 'RandomMDPEnv'
+        args: [5, 5, 'r1', 'c1']  # [num_states, num_actions, reward_fnc, cost_fnc]
+        kwargs:
+          transition_seed: 1066
+      
+      # Agent configs
+      agents_module_name: 'main.core.agents'
+      agent_config:
+        class: 'LinearACAgent'
+        args: [0.001, 0.01] # [pi_lr, v_lr]
+        kwargs: {}
+      
+      # IOManager configs
+      iomanager_config:
+        class: Null  # Will break if not specified at runtime
+        args: ['test_data']  # Output directory
+        kwargs:
+          interval: 1000  # Print interval
+          agent_name: Null  # specified at runtime
+          filename: Null  # specified at runtime
+      
+      # Trial configs
+      trial_config:
+        width: 100
+        n_steps: 20000
+        log: True
+        plot: False
+        print: True
