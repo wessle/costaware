@@ -26,6 +26,6 @@ iomanager_config:
 trial_config:
   width: 100
   n_steps: 10000
-  logging: True
-  plotting: False
-  stdouting: True
+  log: True
+  plot: False
+  print: True
