@@ -31,16 +31,25 @@ class IOManager:
     def print(self, dont_skip, **kwargs):
         if dont_skip:
             defaults = {'episode': None,
+                        'n_episodes': 1,
                         'step': None,
+                        'n_steps': 1,
                         'ratio': None,
                         'state': None,
                         'action': None,}
             defaults.update(kwargs)
             kwargs = defaults
+
+            swidth = int(np.log10(kwargs['n_steps'])) + 1
+            step_episode = '{:{}d}:'.format(kwargs['step'], swidth)
+            if kwargs['n_episodes'] > 1:
+                ewidth = int(np.log10(kwargs['n_episodes'])) + 1
+                step_episode += '/' + '{:{}d}:'.format(kwargs['episode'], ewidth)
+
             
             if kwargs['step'] % self.interval == 0:
                 print(' '.join([f'{self.agent_name}',
-                                f'{kwargs["step"]:7d} / {kwargs["episode"]:4d}',
+                                step_episode,
                                 f'(rho={kwargs["ratio"]:.2f},',
                                 f'state={kwargs["state"]},',
                                 f'action={kwargs["action"]})']))
@@ -123,8 +132,8 @@ class TrialRunner:
         self.io    = io_manager
 
         defaults = {'width': 100,
-                    'n_steps': 500_000,
-                    'n_episodes': 1000,
+                    'n_steps': 50_000,
+                    'n_episodes': 10,
                     'log': True,
                     'plot': False,
                     'print': True,
@@ -151,10 +160,12 @@ class TrialRunner:
                 self.agent.update((reward, cost), next_state)
 
                 # Next, process the rewards and costs signals
-                rewards.append(reward); costs.append(cost)
+                rewards.append(reward); 
+                costs.append(cost)
                 ratios.append(np.mean(rewards) / np.mean(costs))
     
                 self.io.print(self.print, episode=episode, step=step,
+                              n_episodes=self.n_episodes, n_steps=self.n_steps,
                               ratio=ratios[-1], state=self.env.state, action=action)
 
                 self.io.log(self.log, episode=episode, step=step, ratios=ratios)
