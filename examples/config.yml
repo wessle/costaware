@@ -14,13 +14,18 @@ agent_config:
   kwargs: {}
 
 # IOManager configs
-output_dir: '/home/wessle/work/costaware/data/experiment_runner_example'
+iomanager_config:
+  class: Null  # Will break if not specified at runtime
+  args: ['test_data']  # Output directory
+  kwargs:
+    interval: 1000  # Print interval
+    agent_name: Null  # specified at runtime
+    filename: Null  # specified at runtime
 
 # Trial configs
 trial_config:
   width: 100
-  print_interval: 10000
-  n_steps: 100000
+  n_steps: 10000
   logging: True
   plotting: False
   stdouting: True
