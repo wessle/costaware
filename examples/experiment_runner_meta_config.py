@@ -39,7 +39,6 @@ if __name__ == '__main__':
         config = trial_set['trial']
 
         # Create env
-        # import pdb; pdb.set_trace()
         envs_module = import_module(config['envs_module_name'])
         env_config = config['env_config']
         env_config['class'] = getattr(envs_module, env_config['class'])
