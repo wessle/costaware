@@ -1,7 +1,7 @@
 import math
 
 import numpy as np
-from numpy import cos
+from numpy import cos, sin
 import wesutils
 from time import time
 from gym.spaces import Discrete
@@ -13,7 +13,7 @@ from main.experimental.experimental_envs import AcrobotCostAwareEnv
 Q_hidden_units = 128
 buffer_maxlen = 100000
 batchsize = 128
-q_lr = 0.005
+q_lr = 0.001
 rho_lr = 0.0001
 eps = 0.05
 enable_cuda = False
@@ -23,7 +23,7 @@ rho_clip_radius = None
 
 # experiment parameters
 num_episodes = 100
-episode_len = 500
+episode_len = 300
 
 
 # 11/6 better...
@@ -43,17 +43,28 @@ def cost_fn(state):
         cost = max(1 + height, 1) ** 2
     return cost
 
+# 11/16 working
+def cost_fn1(state):
+    height = -cos(state[0]) - cos(state[1] + state[0])
+    # Height > 0, give greater cost for higherpoint
+    if height > 0:
+        cost = (max(1 + height, 1.2))**2
+    # OW give cost according to first angle
+    else:
+        cost = (1 - (state[0]/5))**2
+    return cost
+
 
 if __name__ == '__main__':
 
     # create env
-    env = AcrobotCostAwareEnv(cost_fn=cost_fn)
+    env = AcrobotCostAwareEnv(cost_fn=cost_fn1)
     env.reset()
 
     # gather info about the env
-    state_dim = len(env.state)
+    state_dim = env.observation_space.shape[0]
     num_actions = env.action_space.n
-    assert isinstance(env.action_space, Discrete), 'action space must be 1D'
+    assert np.ndim(env.action_space.shape) == 1, 'action space must be 1D'
     action_dim = 1
 
     # create Q function and agent
@@ -67,7 +78,9 @@ if __name__ == '__main__':
         rho_init=rho_init,
         grad_clip_radius=grad_clip_radius,
         rho_clip_radius=rho_clip_radius)
-    agent.set_reference_state(env.state)
+    agent.set_reference_state(np.array([cos(env.state[0]), sin(env.state[0]),
+                                        cos(env.state[1]), sin(env.state[1]),
+                                        env.state[2], env.state[3]]))
 
     # create formats for printing output
     fmt = '{:^5s} | {:^10s} | {:^10s} | {:^10s} | {:^10s} | {:^10s} | {:^10s}'
@@ -80,15 +93,14 @@ if __name__ == '__main__':
         rewards, costs = [], []
         t0 = time()
         for _ in range(episode_len):
-            env_state = env.state
-            if len(env_state) > 4:
-                env_state = state[0:4]  # Only use the first 4
-            action = agent.sample_action(env_state)
+            action = agent.sample_action(np.array([cos(env.state[0]), sin(env.state[0]),
+                                        cos(env.state[1]), sin(env.state[1]),
+                                        env.state[2], env.state[3]]))
             state, reward_cost_tuple, done, _ = env.step(action)
             reward, cost = reward_cost_tuple
             rewards.append(reward)
             costs.append(cost)
-            agent.update(reward_cost_tuple, state[0:4])
+            agent.update(reward_cost_tuple, state)
             if done:
                 break
 
