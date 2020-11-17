@@ -37,7 +37,9 @@ if __name__ == '__main__':
     iomanager_configs = [{'class': experiment.IOManager,
                           'args': [output_dir],
                           'kwargs': {
-                              'interval': 1000, 'agent_name': agent_name,
+                              'print_interval': 1000,
+                              'log_interval': 1000,
+                              'agent_name': agent_name,
                               'filename': 'ratios',
                           }} for output_dir in output_dirs]
 

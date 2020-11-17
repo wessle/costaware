@@ -17,7 +17,7 @@ parser.add_argument('--cpus_per_trial', type=int, default=1,
 parser.add_argument('--output_dir', type=str,
                     default='experiment_runner_config_data',
                     help='Directory to store trial data in')
-parser.add_argument('--config', type=str, default='trial_config_example.yml',
+parser.add_argument('--config', type=str, default='trial_config.yml',
                     help='Filename of YAML file containing trial configs')
 
 args = parser.parse_args()
@@ -66,8 +66,7 @@ if __name__ == '__main__':
     # make IOManagers for each env
     iomanager_config['class'] = experiment.IOManager
     iomanager_config['kwargs'].update({
-        'agent_name': f'{agent_config["class"].__name__}',
-        'filename': f'{agent_config["class"].__name__}'})
+        'agent_name': f'{agent_config["class"].__name__}'})
     iomanager_configs = []
     for output_dir in output_dirs:
         iomanager_configs.append(iomanager_config.copy())

@@ -24,7 +24,8 @@ class IOManager:
             warnings.warn(msg.format(output_dir))
         self.output_dir = output_dir
 
-        self.interval   = kwargs.get('interval')   or 100000
+        self.print_interval   = kwargs.get('print_interval')   or 100000
+        self.log_interval   = kwargs.get('log_interval')   or 100000
         self.agent_name = kwargs.get('agent_name') or 'UnspecifiedAgent'
         self.filename   = kwargs.get('filename')   or f'{self.agent_name}_ratios'
 
@@ -47,7 +48,7 @@ class IOManager:
                 step_episode += '/' + '{:{}d}:'.format(kwargs['episode'], ewidth)
 
             
-            if kwargs['step'] % self.interval == 0:
+            if kwargs['step'] % self.print_interval == 0:
                 print(' '.join([f'{self.agent_name}',
                                 step_episode,
                                 f'(rho={kwargs["ratio"]:.2f},',
@@ -62,7 +63,7 @@ class IOManager:
         Any callback with this signature may be used instead, but this is a
         reasonable default behavior.
         """
-        if dont_skip:
+        if dont_skip and kwargs['step'] % self.log_interval == 0:
             npy_file = os.path.join(self.output_dir, self.filename + '.npy')
             np.save(npy_file, kwargs['ratios'])
 
@@ -115,28 +116,35 @@ class TrialRunner:
          - width (default = 100)
            The width of the simple moving average window for computation of the
            reward+cost ratios.
-         - io_interval (default = 10000)
-           How frequently the agent should print provisional data to stdout and
-           log to save files.
-         - n_steps (default = 500000)
-           Number of training steps.
-         - logging (default = True)
-           Whether the experi)ent will save ratios to a file.
-         - plotting (default = False)
+         - n_episodes (default = 1)
+           Number of episodes.
+         - n_steps (default = 100000)
+           Number of training steps per episode.
+         - log (default = True)
+           Whether the experiment will save ratios to a file.
+         - plot (default = False)
            Whether the experiment will save plot summaries of the ratios.
-         - stdouting (default = True)
-           Uhether the experiment will print provisional info to stdout.
+         - print (default = True)
+           Whether the experiment will print provisional info to stdout.
+         - print_interval (default = 10000)
+           How frequently the agent should print provisional data to stdout.
+         - log_interval (default = 10000)
+           How frequently the agent should log provisional data.
+         - agent_name
+           Name of the agent.
         """
         self.env   = env
         self.agent = agent
         self.io    = io_manager
 
         defaults = {'width': 100,
-                    'n_steps': 50_000,
-                    'n_episodes': 10,
+                    'n_episodes': 1,
+                    'n_steps': 100_000,
                     'log': True,
                     'plot': False,
                     'print': True,
+                    'print_interval': 10000,
+                    'log_interval': 10000,
                     'agent_name': type(agent).__name__}
         defaults.update(kwargs)
         self.__dict__.update(**defaults)
