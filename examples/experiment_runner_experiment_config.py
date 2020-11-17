@@ -8,12 +8,13 @@ import main.utils.experiment as experiment
 
 
 parser = argparse.ArgumentParser(
-    'python experiment_runner_meta_config.py'
+    'python experiment_runner_experiment_config.py'
 )
 parser.add_argument('--output_dir', type=str,
                     default=None,
                     help='Directory to store trial data in')
-parser.add_argument('--config', type=str, default='config.yml',
+parser.add_argument('--config', type=str,
+                    default='experiment_config.yml',
                     help='Filename of YAML file containing trial configs')
 args = parser.parse_args()
 
@@ -66,8 +67,7 @@ if __name__ == '__main__':
         iomanager_config = config['iomanager_config']
         iomanager_config['class'] = experiment.IOManager
         iomanager_config['kwargs'].update({
-            'agent_name': f'{agent_config["class"].__name__}',
-            'filename': f'{agent_config["class"].__name__}'})
+            'agent_name': f'{agent_config["class"].__name__}'})
         iomanager_configs = []
         for output_dir in output_dirs:
             iomanager_configs.append(iomanager_config.copy())

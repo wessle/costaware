@@ -7,7 +7,7 @@ import main.utils.experiment as experiment
 
 
 parser = argparse.ArgumentParser(
-    'python experiment_runner_config.py'
+    'python experiment_runner_trial_config.py'
 )
 
 parser.add_argument('--num_trials', type=int, default=2,
@@ -17,7 +17,7 @@ parser.add_argument('--cpus_per_trial', type=int, default=1,
 parser.add_argument('--output_dir', type=str,
                     default='experiment_runner_config_data',
                     help='Directory to store trial data in')
-parser.add_argument('--config', type=str, default='config.yml',
+parser.add_argument('--config', type=str, default='trial_config_example.yml',
                     help='Filename of YAML file containing trial configs')
 
 args = parser.parse_args()

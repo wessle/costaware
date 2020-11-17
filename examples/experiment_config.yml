@@ -1,3 +1,7 @@
+# This is an example config file specifying an experiment composed of
+# two sets of trials. Each trial set will be repeated num_replications times.
+
+
 output_dir: 'test_experiment'
 
 # Ray configs
@@ -46,6 +50,7 @@ trial_sets:
       trial_config:
         width: 100
         n_steps: 20000
+        n_episodes: 1
         log: True
         plot: False
         print: True
@@ -78,12 +83,13 @@ trial_sets:
         kwargs:
           interval: 1000  # Print interval
           agent_name: Null  # specified at runtime
-          filename: Null  # specified at runtime
+          filename: 'ratios'  # specified at runtime
       
       # Trial configs
       trial_config:
         width: 100
         n_steps: 20000
+        n_episodes: 1
         log: True
         plot: False
         print: True

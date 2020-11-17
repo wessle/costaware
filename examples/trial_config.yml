@@ -1,3 +1,6 @@
+# This is an example config file specifying a single trial.
+
+
 # Environment configs
 envs_module_name: 'main.core.envs'
 env_config:
@@ -25,7 +28,8 @@ iomanager_config:
 # Trial configs
 trial_config:
   width: 100
-  n_steps: 10000
+  n_steps: 100000
+  n_episodes: 1
   log: True
   plot: False
   print: True
