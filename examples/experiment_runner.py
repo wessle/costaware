@@ -46,8 +46,9 @@ if __name__ == '__main__':
     trial_config = {'width': 100, 'n_steps': 10_000, 'n_episodes': 10,
                     'log': True, 'plot': False, 'print': True}
 
+    # TODO Pass the actual all_configs_dict instead of an empty dict
     config_tuples = [experiment.ConfigTuple(
-            env_config, agent_config, iomanager_config, trial_config
+            env_config, agent_config, iomanager_config, trial_config, {}
         ) for iomanager_config in iomanager_configs]
 
     ray_configs = {'num_cpus': args.num_trials*args.cpus_per_trial,

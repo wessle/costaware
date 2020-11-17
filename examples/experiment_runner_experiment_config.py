@@ -2,6 +2,7 @@ import argparse
 import yaml
 from importlib import import_module
 import os
+from copy import deepcopy
 
 
 import main.utils.experiment as experiment
@@ -38,6 +39,7 @@ if __name__ == '__main__':
     for trial_set in trial_sets:
 
         config = trial_set['trial']
+        original_config = deepcopy(config)
 
         # Create env
         envs_module = import_module(config['envs_module_name'])
@@ -79,7 +81,8 @@ if __name__ == '__main__':
 
         # Create a list of ConfigTuples, one for each trial replication
         config_tuples.extend(experiment.ConfigTuple(
-            env_config, agent_config, iomanager_config, trial_config) \
+            env_config, agent_config, iomanager_config, trial_config,
+            original_config) \
             for iomanager_config in iomanager_configs)
 
 

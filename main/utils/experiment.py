@@ -94,10 +94,15 @@ class IOManager:
             plot_file = os.path.join(self.output_dir, self.filename + '.png')
             fig.savefig(plot_file, **kwargs['plot_kwargs']) 
 
-    def save_yml(self, **kwargs):
-        yaml_file = os.path.join(self.output_dir, self.filename + '.yml')
-        with open(yaml_file, 'w') as out:
-            out.write(yaml.safe_dump(kwargs['dictionary']))
+    # def save_yml(self, **kwargs):
+    #     yaml_file = os.path.join(self.output_dir, self.filename + '.yml')
+    #     with open(yaml_file, 'w') as out:
+    #         out.write(yaml.safe_dump(kwargs['dictionary']))
+
+    def save_yml(self, filename, dictionary):
+        yaml_file = os.path.join(self.output_dir, filename + '.yml')
+        with open(yaml_file, 'w') as f:
+            f.write(yaml.safe_dump(dictionary))
 
 
 class TrialRunner:
@@ -200,7 +205,8 @@ ConfigTuple = namedtuple('ConfigTuple',
                          ['env_config',
                           'agent_config',
                           'iomanager_config',
-                          'trial_config'])
+                          'trial_config',
+                          'all_configs_dict'])
 
 class ConfigGenerator:
     """
@@ -431,15 +437,17 @@ class TrialConstructor:
         experiment_configs = self.experiment_runner.experiment_configs
         trials = []
         for trial_tuple in experiment_configs:
-            env_config, agent_config, iomanager_config, trial_config = \
+            env_config, agent_config, iomanager_config, trial_config, config = \
                     trial_tuple.env_config, \
                     trial_tuple.agent_config, \
                     trial_tuple.iomanager_config, \
-                    trial_tuple.trial_config
+                    trial_tuple.trial_config, \
+                    trial_tuple.all_configs_dict
             env = self.env_constructor.create(env_config)
             agent = self.agent_constructor.create(agent_config)
             iomanager = self.iomanager_constructor.create(
                 iomanager_config)
+            iomanager.save_yml('config', config)
             trials.append(self.RayTrialRunner.remote(
                 env, agent, iomanager, **trial_config))
 

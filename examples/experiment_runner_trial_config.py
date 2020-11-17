@@ -1,6 +1,7 @@
 import argparse
 import yaml
 from importlib import import_module
+from copy import deepcopy
 
 
 import main.utils.experiment as experiment
@@ -28,6 +29,7 @@ if __name__ == '__main__':
     # read in YAML config file
     with open(args.config, 'r') as f:
         config = yaml.safe_load(f)
+    original_config = deepcopy(config)
 
 
     # load the module where the envs are stored
@@ -78,7 +80,8 @@ if __name__ == '__main__':
 
     # create a list of ConfigTuples, one for each trial replication
     config_tuples = [experiment.ConfigTuple(
-        env_config, agent_config, iomanager_config, trial_config) \
+        env_config, agent_config, iomanager_config, trial_config,
+        original_config) \
         for iomanager_config in iomanager_configs]
 
     # create the ray configs
