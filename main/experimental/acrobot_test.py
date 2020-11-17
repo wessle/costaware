@@ -7,12 +7,12 @@ from main.core import agents
 from main.experimental.experimental_envs import AcrobotCostAwareEnv
 
 # network and agent parameters
-Q_hidden_units = 128
+Q_hidden_units = 256
 buffer_maxlen = 100000
 batchsize = 128
 q_lr = 0.001
 rho_lr = 0.0001
-eps = 0.05
+eps = 0.1
 enable_cuda = False
 rho_init = 0
 grad_clip_radius = None
@@ -34,11 +34,11 @@ def cost_fn(state):
     if state[0] > 0:
         # First line is below horizontal, maximize the second angle
         # (between first and second link)
-        cost = max(0.6 - state[2]/1.5, 0.1) ** 2
+        cost = max(1-state[2], 0.1) ** 2
     else:
-        # First link is above horizontal, give higher cost
+        # first link is above horizontal, give higher cost
         # for higher height reached
-        cost = max(1 + height, 1) ** 2
+        cost = (1+height) ** 2
     return cost
 
 
@@ -57,7 +57,7 @@ def cost_fn1(state):
 if __name__ == '__main__':
 
     # create env
-    env = AcrobotCostAwareEnv(cost_fn=cost_fn)
+    env = AcrobotCostAwareEnv(cost_fn = cost_fn)
     env.reset()
 
     # gather info about the env
@@ -82,7 +82,7 @@ if __name__ == '__main__':
     # create formats for printing output
     fmt = '{:^5s} | {:^10s} | {:^10s} | {:^10s} | {:^10s} | {:^10s} | {:^10s}'
     fmt_vals = '{:^5} | {:^10.2f} | {:^10.2f} | {:^10.2f} | {:^10.2f} | ' + \
-               '{:^10.2f} | {:^10.2f}'
+            '{:^10.2f} | {:^10.2f}'
 
     # run the experiment
     end_values, rhos = [], []
@@ -107,6 +107,6 @@ if __name__ == '__main__':
             print(fmt.format(
                 'ep', 'rew', 'cost', 'time(s)', 'rho', 'val_est', 'Vsref'))
         print(fmt_vals.format(i, *end_values[-1], time() - t0,
-                              rhos[-1], agent.ref_val_est, agent.ref_state_val()))
+            rhos[-1], agent.ref_val_est, agent.ref_state_val()))
 
         env.reset()
