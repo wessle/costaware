@@ -1,3 +1,7 @@
+# This is an example config file specifying an experiment composed of
+# two sets of trials. Each trial set will be repeated num_replications times.
+
+
 output_dir: 'test_experiment'
 
 # Ray configs
@@ -38,14 +42,16 @@ trial_sets:
         class: Null  # Will break if not specified at runtime
         args: ['test_data']  # Output directory
         kwargs:
-          interval: 1000  # Print interval
+          print_interval: 1000
+          log_interval: 1000
           agent_name: Null  # specified at runtime
-          filename: Null  # specified at runtime
+          filename: 'ratios'  # specified at runtime
       
       # Trial configs
       trial_config:
-        width: 100
+        width: 100  # Width of window for computing moving averages
         n_steps: 20000
+        n_episodes: 1
         log: True
         plot: False
         print: True
@@ -76,14 +82,16 @@ trial_sets:
         class: Null  # Will break if not specified at runtime
         args: ['test_data']  # Output directory
         kwargs:
-          interval: 1000  # Print interval
+          print_interval: 1000
+          log_interval: 1000
           agent_name: Null  # specified at runtime
-          filename: Null  # specified at runtime
+          filename: 'ratios'  # specified at runtime
       
       # Trial configs
       trial_config:
-        width: 100
+        width: 100  # Width of window for computing moving averages
         n_steps: 20000
+        n_episodes: 1
         log: True
         plot: False
         print: True

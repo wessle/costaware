@@ -1,13 +1,14 @@
 import argparse
 import yaml
 from importlib import import_module
+from copy import deepcopy
 
 
 import main.utils.experiment as experiment
 
 
 parser = argparse.ArgumentParser(
-    'python experiment_runner_config.py'
+    'python experiment_runner_trial_config.py'
 )
 
 parser.add_argument('--num_trials', type=int, default=2,
@@ -17,7 +18,7 @@ parser.add_argument('--cpus_per_trial', type=int, default=1,
 parser.add_argument('--output_dir', type=str,
                     default='experiment_runner_config_data',
                     help='Directory to store trial data in')
-parser.add_argument('--config', type=str, default='config.yml',
+parser.add_argument('--config', type=str, default='trial_config.yml',
                     help='Filename of YAML file containing trial configs')
 
 args = parser.parse_args()
@@ -28,6 +29,7 @@ if __name__ == '__main__':
     # read in YAML config file
     with open(args.config, 'r') as f:
         config = yaml.safe_load(f)
+    original_config = deepcopy(config)
 
 
     # load the module where the envs are stored
@@ -66,8 +68,7 @@ if __name__ == '__main__':
     # make IOManagers for each env
     iomanager_config['class'] = experiment.IOManager
     iomanager_config['kwargs'].update({
-        'agent_name': f'{agent_config["class"].__name__}',
-        'filename': f'{agent_config["class"].__name__}'})
+        'agent_name': f'{agent_config["class"].__name__}'})
     iomanager_configs = []
     for output_dir in output_dirs:
         iomanager_configs.append(iomanager_config.copy())
@@ -79,7 +80,8 @@ if __name__ == '__main__':
 
     # create a list of ConfigTuples, one for each trial replication
     config_tuples = [experiment.ConfigTuple(
-        env_config, agent_config, iomanager_config, trial_config) \
+        env_config, agent_config, iomanager_config, trial_config,
+        original_config) \
         for iomanager_config in iomanager_configs]
 
     # create the ray configs
