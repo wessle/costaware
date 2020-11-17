@@ -13,6 +13,10 @@ acrobot_file = deepcopy(*gym.envs.__path__) + '/classic_control/acrobot.py'
 acrobot_path = os.path.abspath(acrobot_file)
 AcrobotEnv = module_from_path('acrobot', acrobot_path).AcrobotEnv
 
+pendulum_file = deepcopy(*gym.envs.__path__) + '/classic_control/pendulum.py'
+pendulum_path = os.path.abspath(pendulum_file)
+PendulumEnv = module_from_path('pendulum', pendulum_path).PendulumEnv
+
 
 class MountainCarCostAwareEnv(MountainCarEnv):
     """
@@ -36,12 +40,39 @@ class MountainCarCostAwareEnv(MountainCarEnv):
 
 class AcrobotCostAwareEnv(AcrobotEnv):
     """
-    This is a costaware version of the OpenAI Gym ACRobot Environment
+    Extension of the OpenAI Acrobot to include a cost as well as
+    a reward. Used to test RL algorithms that maximize the ratio of long-run
+    average reward over long-run average cost.
+
+    User can pass in a cost function that takes the current state as input
+    and outputs a corresponding cost. Default cost function is 1.0, reducing
+    to the reward-only case.
     """
+
     def __init__(self, cost_fn=lambda x: 1.0):
         AcrobotEnv.__init__(self)
         self.cost_fn = cost_fn
 
     def step(self, action):
         state, reward, done, d = AcrobotEnv.step(self, action)
+        return state, (reward, self.cost_fn(state)), done, d
+
+
+class PendulumCostAwareEnv(PendulumEnv):
+    """
+    Extension of the OpenAI PendulumEnv to include a cost as well as
+    a reward. Used to test RL algorithms that maximize the ratio of long-run
+    average reward over long-run average cost.
+
+    User can pass in a cost function that takes the current state as input
+    and outputs a corresponding cost. Default cost function is 1.0, reducing
+    to the reward-only case.
+    """
+
+    def __init__(self, cost_fn=lambda x: 1.0):
+        PendulumEnv.__init__(self)
+        self.cost_fn = cost_fn
+
+    def step(self, action):
+        state, reward, done, d = PendulumEnv.step(self, action)
         return state, (reward, self.cost_fn(state)), done, d
