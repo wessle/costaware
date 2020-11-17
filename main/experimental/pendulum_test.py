@@ -23,13 +23,15 @@ episode_len = 300
 
 
 # Define a cost function to be used in our cost-aware environment
-# 11/15 Working
 def cost_fn(state):
     """
     state = [cos(theta), sin(theta), ang_vel]
     """
     cost1 = 1 + state[0] / 2
     cost2 = 1 - abs(state[2] / 9)
+    # give cost based on the theta value and the angular velocity
+    # if the theta is ~1 (standing vertical)
+    # give higher cost for smaller angular velocity
     return (0.6*cost1 + 0.4*cost2)**3
 
 
@@ -56,8 +58,7 @@ if __name__ == '__main__':
         rho_init=rho_init,
         grad_clip_radius=grad_clip_radius,
         rho_clip_radius=rho_clip_radius)
-    agent.set_reference_state(np.array([np.cos(env.state[0]),
-                                        np.sin(env.state[0]), env.state[1]]))
+    agent.set_reference_state(env.get_ob())
 
     # create formats for printing output
     fmt = '{:^5s} | {:^10s} | {:^10s} | {:^10s} | {:^10s} | {:^10s} | {:^10s}'
@@ -70,8 +71,7 @@ if __name__ == '__main__':
         rewards, costs = [], []
         t0 = time()
         for _ in range(episode_len):
-            action = agent.sample_action(np.array([np.cos(env.state[0]),
-                                                   np.sin(env.state[0]), env.state[1]]))
+            action = agent.sample_action(env.get_ob())
             action = [action]
             state, reward_cost_tuple, done, _ = env.step(action)
             reward, cost = reward_cost_tuple

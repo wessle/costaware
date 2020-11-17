@@ -1,10 +1,7 @@
-import math
-
 import numpy as np
 from numpy import cos, sin
 import wesutils
 from time import time
-from gym.spaces import Discrete
 
 from main.core import agents
 from main.experimental.experimental_envs import AcrobotCostAwareEnv
@@ -26,7 +23,8 @@ num_episodes = 100
 episode_len = 300
 
 
-# 11/6 better...
+# 11/17 learns in ~10 episodes (best rw = -74)
+# not very stable
 def cost_fn(state):
     """
     A state of [1, 0, 1, 0, ..., ...] means that both links point downwards.
@@ -43,10 +41,11 @@ def cost_fn(state):
         cost = max(1 + height, 1) ** 2
     return cost
 
-# 11/16 working
+
+# 11/17 learns in ~20 episodes
 def cost_fn1(state):
     height = -cos(state[0]) - cos(state[1] + state[0])
-    # Height > 0, give greater cost for higherpoint
+    # Height > 0, give greater cost for higher point
     if height > 0:
         cost = (max(1 + height, 1.2))**2
     # OW give cost according to first angle
@@ -58,7 +57,7 @@ def cost_fn1(state):
 if __name__ == '__main__':
 
     # create env
-    env = AcrobotCostAwareEnv(cost_fn=cost_fn1)
+    env = AcrobotCostAwareEnv(cost_fn=cost_fn)
     env.reset()
 
     # gather info about the env
@@ -78,9 +77,7 @@ if __name__ == '__main__':
         rho_init=rho_init,
         grad_clip_radius=grad_clip_radius,
         rho_clip_radius=rho_clip_radius)
-    agent.set_reference_state(np.array([cos(env.state[0]), sin(env.state[0]),
-                                        cos(env.state[1]), sin(env.state[1]),
-                                        env.state[2], env.state[3]]))
+    agent.set_reference_state(env.get_ob())
 
     # create formats for printing output
     fmt = '{:^5s} | {:^10s} | {:^10s} | {:^10s} | {:^10s} | {:^10s} | {:^10s}'
@@ -93,9 +90,7 @@ if __name__ == '__main__':
         rewards, costs = [], []
         t0 = time()
         for _ in range(episode_len):
-            action = agent.sample_action(np.array([cos(env.state[0]), sin(env.state[0]),
-                                        cos(env.state[1]), sin(env.state[1]),
-                                        env.state[2], env.state[3]]))
+            action = agent.sample_action(env.get_ob())
             state, reward_cost_tuple, done, _ = env.step(action)
             reward, cost = reward_cost_tuple
             rewards.append(reward)
