@@ -57,6 +57,9 @@ class AcrobotCostAwareEnv(AcrobotEnv):
         state, reward, done, d = AcrobotEnv.step(self, action)
         return state, (reward, self.cost_fn(state)), done, d
 
+    def get_ob(self):
+        return AcrobotEnv._get_ob(self)
+
 
 class PendulumCostAwareEnv(PendulumEnv):
     """
@@ -76,3 +79,6 @@ class PendulumCostAwareEnv(PendulumEnv):
     def step(self, action):
         state, reward, done, d = PendulumEnv.step(self, action)
         return state, (reward, self.cost_fn(state)), done, d
+
+    def get_ob(self):
+        return PendulumEnv._get_obs(self)
