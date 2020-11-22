@@ -1,3 +1,6 @@
+import argparse
+import os
+import yaml
 import numpy as np
 import pandas as pd
 from numpy.random import default_rng
@@ -5,58 +8,62 @@ from scipy import stats
 from scipy.special import expit
 import matplotlib.pyplot as plt
 import seaborn as sns
-
-rng = default_rng()
-
-def simulated_noise(shape):
-    return rng.standard_normal(shape)
-
-def simulated_output(x, mean, capacity, rate):
-    x = (x - mean) / x.size
-    signal = capacity * expit(rate * x)
-    noise = simulated_noise(x.shape) * np.exp(-x)
-    return signal + noise
+from matplotlib import rc
 
 
-confidence_level = 95
-n_steps = 100000
-n_sims = 10
-n_series = 2
 
-params = {
-    0: (n_steps / 2, 1., 10),
-    1: (3 * n_steps / 4, 2., 10)
-}
+parser = argparse.ArgumentParser('python plotter.py')
+parser.add_argument('--data_dir', type=str,
+                    default=None,
+                    help='Directory to store trial data in')
 
-def get_data(downsample=None):
-    """
-    downsample : int
-        reduce dataframe by factor of downsample
-    """
-    steps = np.arange(n_steps)
-    ds = n_steps // downsample
-    
-    data = pd.DataFrame([
-        (step, x, i, series) \
-        for series in range(n_series) \
-        for i in range(n_sims) \
-        for step, x in zip(steps, simulated_output(steps, *params[series]))
-    ], columns=['step', 'ratio', 'sim', 'series'])
-    data = data[data['step'] % ds == 0]
-    
+args = parser.parse_args()
+
+def directories(path):
+    return filter(
+        lambda name: os.path.isdir(os.path.join(path, name)),
+        os.listdir(path)
+    )
+
+
+def get_data(root=args.data_dir, drop=500):
+    data = []
+    for sd in directories(root):
+        directory = os.path.join(root, sd)
+        for experiment, ssd in enumerate(directories(directory)):
+            subdirectory = os.path.join(directory, ssd)
+            ratios = np.load(os.path.join(subdirectory, 'ratios.npy'))
+            config = yaml.safe_load(
+                open(os.path.join(subdirectory, 'config.yml'), 'r')
+            )
+            agent = config['agent_config']['class']
+
+            for step, ratio in enumerate(ratios):
+                    data.append((step, ratio, experiment, agent))
+
+    data = pd.DataFrame(data, columns=['step', 'ratio', 'experiment', 'agent'])
+    data = data[data['step'] % drop == 0]
+
     return data
-
+                    
 
 class Plotter:
+    """
+    TODOs:
+    ------
+    * Can we toggle showing AC only or Q only?`
+    """
 
     def __init__(self, **kwargs):
         defaults = {
-            'context' : 'paper',
-            'style'   : 'ticks',
-            'palette' : 'muted',
-            'xlabel'  : 'steps',
-            'ylabel'  : 'ratios',
-            'title'   : 'title',
+            'context'    : 'paper',
+            'style'      : 'ticks',
+            'palette'    : 'muted',
+            'xlabel'     : 'steps',
+            'ylabel'     : 'ratios',
+            'title'      : 'title',
+            'usetex'     : True,
+            'confidence' : 95,
         }
         defaults.update(kwargs)
         self.__dict__.update(defaults)
@@ -65,10 +72,11 @@ class Plotter:
         sns.set_context(self.context)
         sns.set_style(self.style)
         sns.set_palette(self.palette)
+        rc('text', usetex=self.usetex)
 
-        fig, ax = plt.subplots()
-        sns.lineplot(data=data, x='step', y='ratio', hue='series',
-                     ci=confidence_level)
+        fig, ax = plt.subplots(figsize=(8,6))
+        sns.lineplot(data=data, x='step', y='ratio', hue='agent',
+                     ci=self.confidence)
 
         ax.set_xlabel(self.xlabel)
         ax.set_ylabel(self.ylabel)
@@ -78,9 +86,10 @@ class Plotter:
 
         return fig, ax
 
+OUTPUT_NAME = 'comparison'
+PLOT_FMT = '.png'
 
-
-data = get_data(downsample=150)
-fig, ax = Plotter().plot(data)
-fig.savefig('test.png', bbox_inches='tight')
-data.to_html('test.html')
+data = get_data(drop=150)
+# fig, ax = Plotter(confidence=90).plot(data)
+# fig.savefig(os.path.join(args.data_dir, OUTPUT_NAME + PLOT_FMT), bbox_inches='tight') 
+# data.to_csv(os.path.join(args.data_dir, OUTPUT_NAME + '.csv'))
