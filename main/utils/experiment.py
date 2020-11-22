@@ -63,7 +63,7 @@ class IOManager:
         Any callback with this signature may be used instead, but this is a
         reasonable default behavior.
         """
-        if dont_skip and kwargs['step'] % self.log_interval == 0:
+        if kwargs.get('force') or (dont_skip and kwargs['step'] % self.log_interval == 0):
             npy_file = os.path.join(self.output_dir, self.filename + '.npy')
             np.save(npy_file, kwargs['ratios'])
 
@@ -173,7 +173,7 @@ class TrialRunner:
                 self.agent.update((reward, cost), next_state)
 
                 # Next, process the rewards and costs signals
-                rewards.append(reward); 
+                rewards.append(reward) 
                 costs.append(cost)
                 ratios.append(np.mean(rewards) / np.mean(costs))
     
@@ -189,6 +189,7 @@ class TrialRunner:
         self.io.print(self.print, episode=episode, step=step, ratio=ratios[-1],
                       state=self.env.state, action=action)
 
+        self.io.log(self.log, force=True, episode=episode, step=step, ratios=ratios)
         self.io.plot(self.plot, episode=episode, step=step, ratios=ratios)
 
         return ratios
