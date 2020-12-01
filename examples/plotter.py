@@ -28,20 +28,24 @@ def directories(path):
 
 def get_data(root=args.data_dir, drop=500):
     data = []
-    for sd in directories(root):
-        directory = os.path.join(root, sd)
-        for experiment, ssd in enumerate(directories(directory)):
-            subdirectory = os.path.join(directory, ssd)
-            ratios = np.load(os.path.join(subdirectory, 'ratios.npy'))
+    for sd_name in directories(root):
+        sub_directory = os.path.join(root, sd_name)
+        for experiment, ssd_name in enumerate(directories(sub_directory)):
+            subsub_directory = os.path.join(sub_directory, ssd_name)
+            ratios = np.load(os.path.join(subsub_directory, 'ratios.npy'))
             config = yaml.safe_load(
-                open(os.path.join(subdirectory, 'config.yml'), 'r')
+                open(os.path.join(subsub_directory, 'config.yml'), 'r')
             )
             agent = config['agent_config']['class']
+            trial_set_name = sd_name  # config['trial_set_name']
 
             for step, ratio in enumerate(ratios):
-                    data.append((step, ratio, experiment, agent))
+                    data.append((
+                        step, ratio, experiment, agent, trial_set_name
+                    ))
 
-    data = pd.DataFrame(data, columns=['step', 'ratio', 'experiment', 'agent'])
+    data = pd.DataFrame(data, columns=['step', 'ratio', 'experiment', 'agent',
+                                       'trial_set_name'])
     data = data[data['step'] % drop == 0]
 
     return data
@@ -62,7 +66,6 @@ class Plotter:
             'xlabel'     : 'steps',
             'ylabel'     : 'ratios',
             'title'      : 'title',
-            'usetex'     : True,
             'confidence' : 95,
         }
         defaults.update(kwargs)
@@ -72,10 +75,9 @@ class Plotter:
         sns.set_context(self.context)
         sns.set_style(self.style)
         sns.set_palette(self.palette)
-        rc('text', usetex=self.usetex)
 
         fig, ax = plt.subplots(figsize=(8,6))
-        sns.lineplot(data=data, x='step', y='ratio', hue='agent',
+        sns.lineplot(data=data, x='step', y='ratio', hue='trial_set_name',
                      ci=self.confidence)
 
         ax.set_xlabel(self.xlabel)
@@ -90,6 +92,8 @@ OUTPUT_NAME = 'comparison'
 PLOT_FMT = '.png'
 
 data = get_data(drop=150)
-# fig, ax = Plotter(confidence=90).plot(data)
-# fig.savefig(os.path.join(args.data_dir, OUTPUT_NAME + PLOT_FMT), bbox_inches='tight') 
-# data.to_csv(os.path.join(args.data_dir, OUTPUT_NAME + '.csv'))
+
+fig, ax = Plotter(confidence=90).plot(data)
+fig.savefig(os.path.join(args.data_dir, OUTPUT_NAME + PLOT_FMT), bbox_inches='tight') 
+
+data.to_csv(os.path.join(args.data_dir, OUTPUT_NAME + '.csv'))
