@@ -207,6 +207,39 @@ class DeepRVIQLearningBasedAgent(DeepRLAgent):
         self.enable_cuda(self.__enable_cuda, warn=False)
         
 
+class DeepRVIQAgentStandardQ(DeepRVIQLearningBasedAgent):
+    """
+    RVI Q-learning-based agent for maximizing long-run average
+    reward over long-run average cost.
+
+    This particular version of the agent uses a fully connected,
+    two-layer neural network of user-specified layer sizes.
+
+    *** This agent is still TODO ***
+
+    """
+
+    def __init__(self, buffer_maxlen, batchsize, actions,
+                 state_dim, action_dim,
+                 q_lr, rho_lr,
+                 q_layer1_size=64, q_layer2_size=64,
+                 eps=0.01, enable_cuda=True, optimizer=torch.optim.Adam,
+                 grad_clip_radius=None,
+                 rho_init=0.0, rho_clip_radius=None):
+
+        raise NotImplementedError
+
+        Q = wesutils.two_layer_net(state_dim + action_dim, 1,
+                                   q_layer1_size, q_layer2_size)
+
+        super().__init__(buffer_maxlen, batchsize, actions,
+                         Q, q_lr, rho_lr,
+                         eps=eps, enable_cuda=enable_cuda,
+                         optimizer=optimizer,
+                         grad_clip_radius=grad_clip_radius,
+                         rho_init=rho_init, rho_clip_radius=rho_clip_radius)
+
+
 class DeepACAgent(DeepRLAgent):
     """
     Actor-critic RL agent for maximizing long-run average
@@ -666,4 +699,33 @@ class LinearACAgent(ContinuingACAgent):
                          init_mu_r=init_mu_r, init_mu_c=init_mu_c, mu_lr=mu_lr,
                          mu_floor=mu_floor,
                          grad_clip_radius=grad_clip_radius)
+
+
+class PolynomialBasis:
+    """
+    Provides a mapping from state-action pairs to polynomial feature vectors.
+
+    Some simple normalization is done to ensure that all entries lie within
+    the interval (0, 1].
+
+    It is assumed that states and actions are floats.
+    """
+
+    def __init__(self, states, actions):
+        self._feature_map = {(state, action):
+                            np.array([state + 1,
+                                      action + 1,
+                                      (state + 1)*(action + 1)])
+                            for state in states for action in actions}
+        min_val = np.min(np.array(list(self._feature_map.values())))
+        for key in self._feature_map.keys():
+            self._feature_map[key] = self._feature_map[key] + min_val
+        max_val = np.max(np.array(list(self._feature_map.values())))
+        for key in self._feature_map.keys():
+            self._feature_map[key] = np.append(
+                self._feature_map[key] / max_val, 1)
+
+
+    def __call__(self, state, action):
+        return self._feature_map[(state, action)]
 

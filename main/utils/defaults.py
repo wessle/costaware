@@ -1,5 +1,5 @@
 # Functions for use in defining synthetic cost-aware MDPs
-goal_state = 0
+goal_state = 2
 
 
 def r1(s, a):

@@ -92,7 +92,7 @@ class Plotter:
 OUTPUT_NAME = 'comparison'
 PLOT_FMT = '.png'
 
-data = get_data(drop=150)
+data = get_data(drop=500, n_steps_to_skip=10)
 
 fig, ax = Plotter(confidence=90).plot(data)
 fig.savefig(os.path.join(args.data_dir, OUTPUT_NAME + PLOT_FMT), bbox_inches='tight') 

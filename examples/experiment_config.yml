@@ -6,7 +6,7 @@ output_dir: 'test_experiment'
 
 # Ray configs
 ray_config:
-  num_cpus: 4
+  num_cpus: 30
   cpus_per_trial: 1
   num_gpus: 0
   gpus_per_trial: 0
@@ -17,8 +17,9 @@ ray_config:
 #   + a name for the trial_set
 #   + the configs needed to specify the trials
 trial_sets:
-  - trial_set_name: 'Q_trials_1'
-    num_replications: 2
+
+  - trial_set_name: 'Q_trials_r5_c4_5x5'
+    num_replications: 10
     seeds: []
 
     trial:
@@ -26,16 +27,16 @@ trial_sets:
       envs_module_name: 'main.core.envs'
       env_config:
         class: 'RandomMDPEnv'
-        args: [5, 5, 'r1', 'c1']  # [num_states, num_actions, reward_fnc, cost_fnc]
+        args: [5, 5, 'r5', 'c4']  # [num_states, num_actions, reward_fnc, cost_fnc]
         kwargs:
-          transition_seed: 1066
+          transition_seed: 1492
       
       # Agent configs
       agents_module_name: 'main.core.agents'
       agent_config:
         class: 'TabularQAgent'
         args: [0.01, 0.001] # [q_lr, rho_lr]
-        kwargs: {eps: 0.001}
+        kwargs: {eps: 0.0001}
       
       # IOManager configs
       iomanager_config:
@@ -49,16 +50,16 @@ trial_sets:
       
       # Trial configs
       trial_config:
-        width: 500  # Width of window for computing moving averages
-        n_steps: 20000
+        width: 1000  # Width of window for computing moving averages
+        n_steps: 200_000
         n_episodes: 1
         log: True
         plot: False
         print: True
 
 
-  - trial_set_name: 'Q_trials_2'
-    num_replications: 2
+  - trial_set_name: 'AC_trials_r5_c4_5x5'
+    num_replications: 10
     seeds: []
 
     trial:
@@ -66,16 +67,16 @@ trial_sets:
       envs_module_name: 'main.core.envs'
       env_config:
         class: 'RandomMDPEnv'
-        args: [5, 5, 'r1', 'c1']  # [num_states, num_actions, reward_fnc, cost_fnc]
+        args: [5, 5, 'r5', 'c4']  # [num_states, num_actions, reward_fnc, cost_fnc]
         kwargs:
-          transition_seed: 1066
+          transition_seed: 1492
       
       # Agent configs
       agents_module_name: 'main.core.agents'
       agent_config:
-        class: 'TabularQAgent'
-        args: [0.01, 0.001] # [q_lr, rho_lr]
-        kwargs: {eps: 0.01}
+        class: 'LinearACAgent'
+        args: [0.001, 0.01] # [pi_lr, v_lr]
+        kwargs: {}
       
       # IOManager configs
       iomanager_config:
@@ -89,49 +90,9 @@ trial_sets:
       
       # Trial configs
       trial_config:
-        width: 500  # Width of window for computing moving averages
-        n_steps: 20000
+        width: 1000  # Width of window for computing moving averages
+        n_steps: 200_000
         n_episodes: 1
         log: True
         plot: False
         print: True
-
-
-          #  - trial_set_name: 'AC_trials'
-          #    num_replications: 2
-          #    seeds: []
-          #
-          #    trial:
-          #      # Environment configs
-          #      envs_module_name: 'main.core.envs'
-          #      env_config:
-          #        class: 'RandomMDPEnv'
-          #        args: [5, 5, 'r1', 'c1']  # [num_states, num_actions, reward_fnc, cost_fnc]
-          #        kwargs:
-          #          transition_seed: 1066
-          #      
-          #      # Agent configs
-          #      agents_module_name: 'main.core.agents'
-          #      agent_config:
-          #        class: 'LinearACAgent'
-          #        args: [0.001, 0.01] # [pi_lr, v_lr]
-          #        kwargs: {}
-          #      
-          #      # IOManager configs
-          #      iomanager_config:
-          #        class: Null  # Will break if not specified at runtime
-          #        args: ['test_data']  # Output directory
-          #        kwargs:
-          #          print_interval: 1000
-          #          log_interval: 1000
-          #          agent_name: Null  # specified at runtime
-          #          filename: 'ratios'  # specified at runtime
-          #      
-          #      # Trial configs
-          #      trial_config:
-          #        width: 500  # Width of window for computing moving averages
-          #        n_steps: 20000
-          #        n_episodes: 1
-          #        log: True
-          #        plot: False
-          #        print: True
