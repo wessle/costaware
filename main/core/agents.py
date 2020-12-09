@@ -594,6 +594,60 @@ class SoftmaxPolicy:
     
     def pdf(self, action, state):
         return self._get_probs(state)[self.action_indices[action]]
+
+
+class PolynomialBasis:
+    """
+    Provides a mapping from state-action pairs to polynomial feature vectors.
+
+    Some simple normalization is done to ensure that all entries lie within
+    the interval (0, 1].
+
+    It is assumed that states and actions are floats.
+    """
+
+    def __init__(self, states, actions):
+        self._feature_map = {(state, action):
+                            np.array([state + 1,
+                                      action + 1,
+                                      (state + 1)*(action + 1)])
+                            for state in states for action in actions}
+        min_val = np.min(np.array(list(self._feature_map.values())))
+        for key in self._feature_map.keys():
+            self._feature_map[key] = self._feature_map[key] + min_val
+        max_val = np.max(np.array(list(self._feature_map.values())))
+        for key in self._feature_map.keys():
+            self._feature_map[key] = np.append(
+                self._feature_map[key] / max_val, 1)
+
+
+    def __call__(self, state, action):
+        return self._feature_map[(state, action)]
+
+
+class LinearApproximatorPolynomialBasis:
+    """
+    Linear approximator using polynomial feature vectors.
+
+    States and actions must be scalar.
+    """
+
+    def __init__(self, states, actions, init_cov_constant=1):
+        self.feature_map = PolynomialBasis(states, actions)
+        self.init_cov_constant = init_cov_constant
+        self.num_params = len(list(self.feature_map._feature_map.values())[0])
+        self.reinit_params()
+
+    def reinit_params(self):
+        self.params = np.random.multivariate_normal(
+            mean=np.zeros(self.num_params),
+            cov=self.init_cov_constant * np.eye(self.num_params))
+
+    def gradient(self, state_action):
+        return self.feature_map(*state_action)
+
+    def __call__(self, state_action):
+        return np.dot(self.params, self.feature_map(*state_action))
     
     
 class SoftmaxPolicyLinear(SoftmaxPolicy):
@@ -603,6 +657,19 @@ class SoftmaxPolicyLinear(SoftmaxPolicy):
         SoftmaxPolicy.__init__(self, actions)
         self.h = LinearApproximator(state_vector_size + 1,
                                     initialization_cov_constant)
+
+
+class SoftmaxPolicyLinearPolynomialBasis(SoftmaxPolicy):
+    """
+    Linear softmax policy using polynomial feature vectors.
+
+    States and actions must be scalar.
+    """
+
+    def __init__(self, states, actions, init_cov_constant=1):
+        super().__init__(actions)
+        self.h = LinearApproximatorPolynomialBasis(states, actions,
+                                                   init_cov_constant)
 
 
 class ContinuingACAgent:
@@ -701,31 +768,30 @@ class LinearACAgent(ContinuingACAgent):
                          grad_clip_radius=grad_clip_radius)
 
 
-class PolynomialBasis:
+class LinearACAgentPolynomialBasis(ContinuingACAgent):
     """
-    Provides a mapping from state-action pairs to polynomial feature vectors.
+    Actor-critic agent using a softmax policy with linear function
+    approximation and polynomial feature vectors.
 
-    Some simple normalization is done to ensure that all entries lie within
-    the interval (0, 1].
-
-    It is assumed that states and actions are floats.
+    States and actions must be scalar.
     """
+    
+    def __init__(self, states, actions,
+                 policy_lr, v_lr, init_mu_r=0, init_mu_c=0, mu_lr=0.005,
+                 mu_floor=0.01,
+                 policy_cov_constant=1, value_func_cov_constant=1,
+                 grad_clip_radius=None):
 
-    def __init__(self, states, actions):
-        self._feature_map = {(state, action):
-                            np.array([state + 1,
-                                      action + 1,
-                                      (state + 1)*(action + 1)])
-                            for state in states for action in actions}
-        min_val = np.min(np.array(list(self._feature_map.values())))
-        for key in self._feature_map.keys():
-            self._feature_map[key] = self._feature_map[key] + min_val
-        max_val = np.max(np.array(list(self._feature_map.values())))
-        for key in self._feature_map.keys():
-            self._feature_map[key] = np.append(
-                self._feature_map[key] / max_val, 1)
+        value_func = LinearApproximator(1,
+                                        value_func_cov_constant)
+        
+        policy = SoftmaxPolicyLinearPolynomialBasis(
+            states, actions, policy_cov_constant)
 
-
-    def __call__(self, state, action):
-        return self._feature_map[(state, action)]
-
+        ContinuingACAgent.__init__(self, policy, value_func,
+                                   policy_lr, v_lr,
+                                   init_mu_r=init_mu_r,
+                                   init_mu_c=init_mu_c,
+                                   mu_lr=mu_lr,
+                                   mu_floor=mu_floor,
+                                   grad_clip_radius=grad_clip_radius)
