@@ -1,3 +1,6 @@
+import numpy as np
+
+
 # Functions for use in defining synthetic cost-aware MDPs
 goal_state = 2
 
@@ -17,6 +20,9 @@ def r4(s, a):
 def r5(s, a):
     return 1 * (s % 2 == 0)
 
+def r7(s, a):
+    return s**2 + a**2 # - s * a
+
 def c1(s, a):
     return max(1, s * a)
 
@@ -34,3 +40,6 @@ def c5(s, a):
 
 def c6(s, a):
     return 1 * (s == goal_state) + 10 * (s != goal_state)
+
+def c7(s, a):
+    return max(1, (s - a)**2)

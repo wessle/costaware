@@ -7,6 +7,7 @@ import wesutils
 import numbers
 from scipy.special import softmax
 from copy import deepcopy
+from itertools import product
 
 
 # RL agents using batch learning and neural nets for function approximators
@@ -442,7 +443,6 @@ class TabularQAgent:
         self.rho_lr = rho_lr
         self.rho = rho_init
         self.eps = eps
-        # self.__Q_table = np.zeros((len(states), len(actions)))
         self.__Q_table = [[0. for _ in range(len(actions))] \
                           for _ in range(len(states))]
         self.__ref_state = ref_state if ref_state is not None \
@@ -611,6 +611,9 @@ class PolynomialBasis:
                             np.array([state + 1,
                                       action + 1,
                                       (state + 1)*(action + 1)])
+                                      # (state + 1)**2 * (action + 1),
+                                      # (state + 1) * (action + 1)**2,
+                                      # (state + 1)**2 * (action + 1)**2])
                             for state in states for action in actions}
         min_val = np.min(np.array(list(self._feature_map.values())))
         for key in self._feature_map.keys():
@@ -648,6 +651,40 @@ class LinearApproximatorPolynomialBasis:
 
     def __call__(self, state_action):
         return np.dot(self.params, self.feature_map(*state_action))
+
+
+class OneToOneBasis:
+    """
+    Maps each state-action pair to a unique standard basis vector.
+
+    Policies using this basis will have one parameter for each pair.
+    """
+
+    def __init__(self, states, actions):
+
+        def basis_vector(i):
+            v = np.zeros(len(states) * len(actions))
+            v[i] = 1.0
+            return v
+
+        self._feature_map = {elem: basis_vector(i) for i, elem in enumerate(
+            product(states, actions))}
+
+    def __call__(self, state, action):
+        return self._feature_map[(state, action)]
+
+
+class LinearApproximatorOneToOneBasis(LinearApproximatorPolynomialBasis):
+    """
+    Linear approximator using a unique standard basis vector for each
+    state-action pair.
+    """
+
+    def __init__(self, states, actions, init_cov_constant=1):
+        super().__init__(states, actions, init_cov_constant)
+        self.feature_map = OneToOneBasis(states, actions)
+        self.num_params = len(list(self.feature_map._feature_map.values())[0])
+        self.reinit_params()
     
     
 class SoftmaxPolicyLinear(SoftmaxPolicy):
@@ -670,6 +707,18 @@ class SoftmaxPolicyLinearPolynomialBasis(SoftmaxPolicy):
         super().__init__(actions)
         self.h = LinearApproximatorPolynomialBasis(states, actions,
                                                    init_cov_constant)
+
+
+class SoftmaxPolicyLinearOneToOneBasis(SoftmaxPolicy):
+    """
+    Linear softmax policy using unique feature vectors for each
+    state-action pair.
+    """
+
+    def __init__(self, states, actions, init_cov_constant=1):
+        super().__init__(actions)
+        self.h = LinearApproximatorOneToOneBasis(states, actions,
+                                                 init_cov_constant)
 
 
 class ContinuingACAgent:
@@ -786,6 +835,35 @@ class LinearACAgentPolynomialBasis(ContinuingACAgent):
                                         value_func_cov_constant)
         
         policy = SoftmaxPolicyLinearPolynomialBasis(
+            states, actions, policy_cov_constant)
+
+        ContinuingACAgent.__init__(self, policy, value_func,
+                                   policy_lr, v_lr,
+                                   init_mu_r=init_mu_r,
+                                   init_mu_c=init_mu_c,
+                                   mu_lr=mu_lr,
+                                   mu_floor=mu_floor,
+                                   grad_clip_radius=grad_clip_radius)
+
+
+class LinearACAgentOneToOneBasis(ContinuingACAgent):
+    """
+    Actor-critic agent using a softmax policy with linear function
+    approximation and unique feature vectors for each state-action pair.
+
+    States and actions must be scalar.
+    """
+    
+    def __init__(self, states, actions,
+                 policy_lr, v_lr, init_mu_r=0, init_mu_c=0, mu_lr=0.005,
+                 mu_floor=0.01,
+                 policy_cov_constant=1, value_func_cov_constant=1,
+                 grad_clip_radius=None):
+
+        value_func = LinearApproximator(1,
+                                        value_func_cov_constant)
+        
+        policy = SoftmaxPolicyLinearOneToOneBasis(
             states, actions, policy_cov_constant)
 
         ContinuingACAgent.__init__(self, policy, value_func,
