@@ -9,6 +9,11 @@ from itertools import product
 
 sns.set_context('paper')
 
+def q_to_array(qfun, states, actions):
+    return np.array([
+        [qfun[(s,a)] for a in actions] for s in states
+    ])
+
 
 class CostAwareMDP:
 
@@ -320,7 +325,6 @@ class CostAwareMDP:
 
         # find the best policy against the performance measure
         optimal_policy = max(self.policies(), key=performance_measure)
-        print(optimal_policy)
 
         # compute its Q-function
         qfun = self.qfun(optimal_policy, rho)
@@ -329,7 +333,7 @@ class CostAwareMDP:
 
 
 # Forming the CostAwareMDP
-states, actions, epsilon = [0, 1], ['L', 'R'], 5e-1
+states, actions, eps1, eps2 = [0, 1], ['L', 'R'], 1/3, 1/5
 
 # compute the reward and cost functions
 def get_fun(states, actions, values):
@@ -338,18 +342,18 @@ def get_fun(states, actions, values):
     }
     return lambda s, a: _dict[(s,a)]
 
-_r = [0., 1., 1., 0.]
+_r = [1., 0., 1., 0.]
 reward = get_fun(states, actions, _r)
 
-_c = [0., 1., -1., 1.]
+_c = [0., 1., -1., -1.]
 cost = get_fun(states, actions, _c)
 
 # compute the transition kernel
 _transition_dict = {
-    ('L',0): 1-epsilon, 
-    ('L',1): epsilon, 
-    ('R',0): epsilon, 
-    ('R',1): 1-epsilon
+    ('L',0): 1-eps1, 
+    ('L',1): eps1, 
+    ('R',0): eps2, 
+    ('R',1): 1-eps2
 }
 transition = lambda s, a, t: _transition_dict[(a, t)]
 
@@ -357,26 +361,32 @@ camdp = CostAwareMDP(states, actions, transition, reward, cost)
 
 
 # Plot the discontinuity of Q by coordinate
-# rho_vals = np.linspace(-1, 1.5, num=150)
-# coords = array([camdp.opt_qfun(t) for t in rho_vals])
-# 
-# 
-# fig, ax = plt.subplots(figsize=(6,3))
-# 
-# for (s, a), series in zip(product(camdp.states, camdp.actions), coords.T):
-#     disconts = np.where(np.abs(np.diff(series) >= 0.2))[0] + 1
-#     rhos = rho_vals[:]
-#     for i, d in enumerate(disconts):
-#         rhos = np.insert(rhos, d+i, rhos[d+i])
-#         series = np.insert(series, d+i, np.nan)
-# 
-#     ax.plot(rhos, series, label=f'$Q^\\rho({s},{a})$')
-# 
-# ax.set_xlabel(r'$\rho$')
-# ax.set_ylabel(r'Coordinate value')
-# ax.legend()
-# sns.despine(ax=ax)
-# # ax.set_title(r"Discontinuity of the function $Q^\rho$")
-# 
-# fig.savefig('counterexample-qfun.png', bbox_inches='tight', transparent=True)
-# plt.close()
+rho_vals = np.linspace(-2., 0., num=150)
+
+coord, s, a = 0, 0, 'L'
+coords = array([
+    q_to_array(
+        camdp.opt_qfun(t), 
+        camdp.states, 
+        camdp.actions
+    ).reshape(-1)[coord] for t in rho_vals
+])
+
+fig, ax = plt.subplots(figsize=(6,3))
+
+# diff = abs(np.diff(coords))
+disconts = np.where(np.abs(rho_vals+1.) < 0.01)[0] + 1
+rhos = rho_vals[:]
+for i, d in enumerate(disconts):
+    rhos = np.insert(rhos, d+i, rhos[d+i])
+    coords = np.insert(coords, d+i, np.nan)
+
+ax.plot(rhos, coords)
+
+ax.set_xlabel(r'$\rho$')
+ax.set_ylabel(f'Value of $Q^\\rho({s},{a})$')
+sns.despine(ax=ax)
+# ax.set_title(r"Discontinuity of the function $Q^\rho$")
+
+fig.savefig('counterexample-qfun.eps', bbox_inches='tight', transparent=True)
+plt.close()
