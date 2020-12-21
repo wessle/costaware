@@ -26,7 +26,7 @@ def directories(path):
     )
 
 
-def get_data(root=args.data_dir, drop=500):
+def get_data(root=args.data_dir, drop=500, n_steps_to_skip=500):
     data = []
     for sd_name in directories(root):
         sub_directory = os.path.join(root, sd_name)
@@ -47,6 +47,7 @@ def get_data(root=args.data_dir, drop=500):
     data = pd.DataFrame(data, columns=['step', 'ratio', 'experiment', 'agent',
                                        'trial_set_name'])
     data = data[data['step'] % drop == 0]
+    data = data[data['step'] >= n_steps_to_skip]
 
     return data
                     
@@ -91,7 +92,7 @@ class Plotter:
 OUTPUT_NAME = 'comparison'
 PLOT_FMT = '.png'
 
-data = get_data(drop=150)
+data = get_data(drop=500, n_steps_to_skip=10)
 
 fig, ax = Plotter(confidence=90).plot(data)
 fig.savefig(os.path.join(args.data_dir, OUTPUT_NAME + PLOT_FMT), bbox_inches='tight') 

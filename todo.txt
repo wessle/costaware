@@ -1,7 +1,0 @@
-2019-12-16 Implement CostAwareEnv
-2019-12-16 Implement Sharpe ratio version of CostAwareEnv
-2019-12-16 Implement Omega ratio version of CostAwareEnv
-2019-12-16 Implement a third version of CostAwareEnv
-2019-12-16 Write unit tests for Asset
-2019-12-16 Write unit tests for Portfolio
-2019-12-16 Think about performance optimization
