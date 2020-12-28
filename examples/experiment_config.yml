@@ -27,16 +27,16 @@ trial_sets:
       envs_module_name: 'main.core.envs'
       env_config:
         class: 'RandomMDPEnv'
-        args: [10, 10, 'r3', 'c3']  # [num_states, num_actions, reward_fnc, cost_fnc]
+        args: [10, 10, 'r1', 'c1']  # [num_states, num_actions, reward_fnc, cost_fnc]
         kwargs:
-          transition_seed: 495
+          transition_seed: 1492
       
       # Agent configs
       agents_module_name: 'main.core.agents'
       agent_config:
         class: 'TabularQAgent'
-        args: [0.1, 0.1] # [q_lr, rho_lr]
-        kwargs: {eps: 0.01}
+        args: [0.001, 0.0005] # [q_lr, rho_lr]
+        kwargs: {eps: 0.001}
       
       # IOManager configs
       iomanager_config:
@@ -67,19 +67,19 @@ trial_sets:
       envs_module_name: 'main.core.envs'
       env_config:
         class: 'RandomMDPEnv'
-        args: [10, 10, 'r3', 'c3']  # [num_states, num_actions, reward_fnc, cost_fnc]
+        args: [10, 10, 'r1', 'c1']  # [num_states, num_actions, reward_fnc, cost_fnc]
         kwargs:
-          transition_seed: 495
+          transition_seed: 1492
       
       # Agent configs
       agents_module_name: 'main.core.agents'
       agent_config:
         class: 'LinearACAgentOneToOneBasis'
-        args: [0.005, 0.01] # [pi_lr, v_lr]
+        args: [0.0001, 0.0001] # [pi_lr, v_lr]
         kwargs:
           init_mu_r: 1
           init_mu_c: 1
-          mu_lr: 0.005
+          mu_lr: 0.0001
           mu_floor: 0.01
           policy_cov_constant: 1
           value_func_cov_constant: 1
@@ -103,50 +103,3 @@ trial_sets:
         log: True
         plot: False
         print: True
-
-
-          #  - trial_set_name: 'old_AC_trials'
-          #    num_replications: 15
-          #    seeds: []
-          #
-          #    trial:
-          #      # Environment configs
-          #      envs_module_name: 'main.core.envs'
-          #      env_config:
-          #        class: 'RandomMDPEnv'
-          #        args: [10, 10, 'r3', 'c3']  # [num_states, num_actions, reward_fnc, cost_fnc]
-          #        kwargs:
-          #          transition_seed: 495
-          #      
-          #      # Agent configs
-          #      agents_module_name: 'main.core.agents'
-          #      agent_config:
-          #        class: 'LinearACAgent'
-          #        args: [0.001, 0.05] # [pi_lr, v_lr]
-          #        kwargs:
-          #          init_mu_r: 1
-          #          init_mu_c: 1
-          #          mu_lr: 0.005
-          #          mu_floor: 0.01
-          #          policy_cov_constant: 1
-          #          value_func_cov_constant: 1
-          #          grad_clip_radius: Null
-          #      
-          #      # IOManager configs
-          #      iomanager_config:
-          #        class: Null  # Will break if not specified at runtime
-          #        args: ['test_data']  # Output directory
-          #        kwargs:
-          #          print_interval: 1000
-          #          log_interval: 1000
-          #          agent_name: Null  # specified at runtime
-          #          filename: 'ratios'  # specified at runtime
-          #      
-          #      # Trial configs
-          #      trial_config:
-          #        width: 1000  # Width of window for computing moving averages
-          #        n_steps: 400_000
-          #        n_episodes: 1
-          #        log: True
-          #        plot: False
-          #        print: True
