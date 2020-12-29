@@ -674,6 +674,28 @@ class OneToOneBasis:
         return self._feature_map[(state, action)]
 
 
+class OneToOneBasisV:
+    """
+    One-to-one feature mapping for states. Maps each state to a unique
+    standard basis vector.
+
+    Value functions using this representation are essentially 'tabular'.
+    """
+
+    def __init__(self, states):
+
+        def basis_vector(i):
+            v = np.zeros(len(states))
+            v[i] = 1.0
+            return v
+
+        self._feature_map = {elem: basis_vector(i) 
+                             for i, elem in enumerate(states)}
+
+    def __call__(self, state):
+        return self._feature_map[state]
+
+
 class LinearApproximatorOneToOneBasis(LinearApproximatorPolynomialBasis):
     """
     Linear approximator using a unique standard basis vector for each
@@ -685,6 +707,30 @@ class LinearApproximatorOneToOneBasis(LinearApproximatorPolynomialBasis):
         self.feature_map = OneToOneBasis(states, actions)
         self.num_params = len(list(self.feature_map._feature_map.values())[0])
         self.reinit_params()
+
+
+class LinearApproximatorOneToOneBasisV:
+    """
+    Linear approximator for the value function using a unique standard basis
+    vector for each state.
+    """
+
+    def __init__(self, states, init_cov_constant=1):
+        self.feature_map = OneToOneBasisV(states)
+        self.init_cov_constant = init_cov_constant
+        self.num_params = len(states)
+        self.reinit_params()
+
+    def reinit_params(self):
+        self.params = np.random.multivariate_normal(
+            mean=np.zeros(self.num_params),
+            cov=self.init_cov_constant * np.eye(self.num_params))
+
+    def gradient(self, state):
+        return self.feature_map(state)
+
+    def __call__(self, state):
+        return np.dot(self.params, self.feature_map(state))
     
     
 class SoftmaxPolicyLinear(SoftmaxPolicy):
@@ -863,6 +909,36 @@ class LinearACAgentOneToOneBasis(ContinuingACAgent):
         value_func = LinearApproximator(1,
                                         value_func_cov_constant)
         
+        policy = SoftmaxPolicyLinearOneToOneBasis(
+            states, actions, policy_cov_constant)
+
+        ContinuingACAgent.__init__(self, policy, value_func,
+                                   policy_lr, v_lr,
+                                   init_mu_r=init_mu_r,
+                                   init_mu_c=init_mu_c,
+                                   mu_lr=mu_lr,
+                                   mu_floor=mu_floor,
+                                   grad_clip_radius=grad_clip_radius)
+
+
+class LinearACAgentOneToOneBasesForQAndV(ContinuingACAgent):
+    """
+    Actor-critic agent using a softmax policy with linear function
+    approximation and unique feature vectors for each state and each
+    state-action pair.
+
+    States and actions must be scalar.
+    """
+
+    def __init__(self, states, actions,
+                 policy_lr, v_lr, init_mu_r=0, init_mu_c=0, mu_lr=0.005,
+                 mu_floor=0.01,
+                 policy_cov_constant=1, value_func_cov_constant=1,
+                 grad_clip_radius=None):
+
+        value_func = LinearApproximatorOneToOneBasisV(
+            states, value_func_cov_constant)
+
         policy = SoftmaxPolicyLinearOneToOneBasis(
             states, actions, policy_cov_constant)
 

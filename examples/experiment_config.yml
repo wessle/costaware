@@ -27,7 +27,7 @@ trial_sets:
       envs_module_name: 'main.core.envs'
       env_config:
         class: 'RandomMDPEnv'
-        args: [10, 10, 'r1', 'c1']  # [num_states, num_actions, reward_fnc, cost_fnc]
+        args: [5, 5, 'r1', 'c1']  # [num_states, num_actions, reward_fnc, cost_fnc]
         kwargs:
           transition_seed: 1492
       
@@ -51,7 +51,7 @@ trial_sets:
       # Trial configs
       trial_config:
         width: 1000  # Width of window for computing moving averages
-        n_steps: 400_000
+        n_steps: 50_000
         n_episodes: 1
         log: True
         plot: False
@@ -67,15 +67,15 @@ trial_sets:
       envs_module_name: 'main.core.envs'
       env_config:
         class: 'RandomMDPEnv'
-        args: [10, 10, 'r1', 'c1']  # [num_states, num_actions, reward_fnc, cost_fnc]
+        args: [5, 5, 'r1', 'c1']  # [num_states, num_actions, reward_fnc, cost_fnc]
         kwargs:
           transition_seed: 1492
       
       # Agent configs
       agents_module_name: 'main.core.agents'
       agent_config:
-        class: 'LinearACAgentOneToOneBasis'
-        args: [0.0001, 0.0001] # [pi_lr, v_lr]
+        class: 'LinearACAgentOneToOneBasesForQAndV'
+        args: [0.01, 0.01] # [pi_lr, v_lr]
         kwargs:
           init_mu_r: 1
           init_mu_c: 1
@@ -98,7 +98,7 @@ trial_sets:
       # Trial configs
       trial_config:
         width: 1000  # Width of window for computing moving averages
-        n_steps: 400_000
+        n_steps: 50_000
         n_episodes: 1
         log: True
         plot: False
