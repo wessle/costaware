@@ -37,7 +37,7 @@ def c2(s, a):
 #     return 1 + (a % 3 - 1)**2
 
 def c3(s, a):
-    return s + a
+    return max(1, s + a)
 
 def c4(s, a):
     return np.exp(-s)
