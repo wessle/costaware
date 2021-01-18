@@ -65,7 +65,8 @@ class DeepRVIQLearningBasedAgent(DeepRLAgent):
         self.__enable_cuda = enable_cuda
         self.enable_cuda(self.__enable_cuda, warn=False)
         # NOTE: self.device is defined when self.enable_cuda is called
-        self.torch_actions = torch.FloatTensor(actions).to(self.device)
+        self.torch_actions = torch.FloatTensor(actions).to(
+            self.device).unsqueeze(dim=1)
 
         self.q_optim = optimizer(self.q.parameters(), lr=q_lr)
         self.rho_lr = rho_lr
@@ -77,6 +78,8 @@ class DeepRVIQLearningBasedAgent(DeepRLAgent):
         self.state = None
         self.action = None
         self.ref_state = None
+
+        self.ref_val_est = 0
 
     def set_reference_state(self, state):
         """Set the reference state to be used in updates."""
@@ -113,7 +116,7 @@ class DeepRVIQLearningBasedAgent(DeepRLAgent):
     def sample_action(self, state):
         """
         Sample an action epsilon-greedily.
-        
+        "
         An action must be sampled before self.update can be called.
         """
 
@@ -166,7 +169,7 @@ class DeepRVIQLearningBasedAgent(DeepRLAgent):
             q_targets = proxy_rewards - average_reward + next_state_values
 
             # form the loss function and take a gradient step
-            q_inputs = torch.cat([states, actions], dim=1)
+            q_inputs = torch.cat([states, actions.unsqueeze(dim=1)], dim=1)
             q_estimates = self.q(q_inputs)
 
             loss = self.q_loss(q_targets.unsqueeze(dim=1), q_estimates)
@@ -178,7 +181,9 @@ class DeepRVIQLearningBasedAgent(DeepRLAgent):
             self.q_optim.step()
 
             # perform the rho update
-            ref_state_val = self.ref_state_val().item()
+            # ref_state_val = self.ref_state_val().item() # not working 10/21
+            self.ref_val_est = 0.99 * self.ref_val_est + 0.01 * proxy_rewards.mean() # working 10/21
+            ref_state_val = self.ref_val_est
             self.rho += np.sign(ref_state_val) * min(
                 self.rho_clip_radius, self.rho_lr * abs(ref_state_val))
 
