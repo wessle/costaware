@@ -3,6 +3,7 @@ import torch.distributions as td
 import torch.nn.functional as F
 import torch.nn as nn
 import numpy as np
+import wesutils
 
 
 class PolicyNetwork(nn.Module):
@@ -24,6 +25,56 @@ class PolicyNetwork(nn.Module):
         raise NotImplemented("sample not implemented.")
 
 
+class CategoricalPolicy(PolicyNetwork):
+    """
+    Base class for categorical policy.
+
+    Desired network needs to be implemented.
+    """
+
+    def __init__(self, state_dim, num_actions):
+
+        super().__init__()
+
+        self.state_dim = state_dim
+        self.num_actions = num_actions
+
+    def sample(self, state, no_log_prob=False):
+        probs = self.forward(state)
+        dist = td.Categorical(probs)
+        action = dist.sample()
+        return action if no_log_prob else (action, dist.log_prob(action))
+
+
+class CategoricalPolicyTwoLayer(CategoricalPolicy):
+    """
+    Categorical policy using a fully connected two-layer network with ReLU
+    activation to generate the parameters of the categorical distribution.
+    """
+
+    def __init__(self, state_dim, num_actions,
+                 hidden_layer1_size=256,
+                 hidden_layer2_size=256,
+                 init_std=0.0001):
+
+        super().__init__(state_dim, num_actions)
+
+        self.init_std = init_std
+
+        self.linear1 = nn.Linear(state_dim, hidden_layer1_size)
+        self.linear2 = nn.Linear(hidden_layer1_size, hidden_layer2_size)
+        self.linear3 = nn.Linear(hidden_layer2_size, num_actions)
+        nn.init.normal_(self.linear1.weight, std=self.init_std)
+        nn.init.normal_(self.linear2.weight, std=self.init_std)
+        nn.init.normal_(self.linear3.weight, std=self.init_std)
+
+    def forward(self, state):
+        x = F.relu(self.linear1(state))
+        x = F.relu(self.linear2(x))
+        output = F.relu(self.linear3(x))
+        return output
+
+
 class DirichletPolicyBase(PolicyNetwork):
     """
     Base class for Dirichlet policies.
@@ -42,10 +93,7 @@ class DirichletPolicyBase(PolicyNetwork):
         alpha = self.forward(state)
         dist = td.Dirichlet(alpha)
         action = dist.sample()
-        if no_log_prob:
-            return action
-        else:
-            return action, dist.log_prob(action)
+        return action if no_log_prob else (action, dist.log_prob(action))
 
 
 class DirichletPolicySingleLayer(DirichletPolicyBase):

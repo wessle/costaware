@@ -257,7 +257,7 @@ class DeepACAgent(DeepRLAgent):
                  grad_clip_radius=None,
                  reward_cost_mean_floor=1e-8):
 
-        self.buffer = wesutils.Buffer(buffer_maxlen)
+        self.buffer = wesutils.Buffer(maxlen=buffer_maxlen)
         self.N = batchsize
         self.pi = policy_network
         self.pi_optim = policy_optimizer(self.pi.parameters(), lr=policy_lr)
@@ -377,8 +377,6 @@ class DeepACAgent(DeepRLAgent):
                 err_vector = ((r_mean/c_mean)*(
                     r_td_err/r_mean - c_td_err/c_mean)).squeeze()
             _, log_pis = self.pi.sample(states)
-
-#            import pdb; pdb.set_trace()
 
             pi_loss = -err_vector.dot(log_pis)
             self.pi_optim.zero_grad()
