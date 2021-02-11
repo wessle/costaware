@@ -7,12 +7,13 @@ from main.core import agents
 from main.core import models
 from main.experimental.experimental_envs import MountainCarCostAwareEnv
 
+
 # network and agent parameters
 Q_hidden_units = 256
 buffer_maxlen = 100000
 batchsize = 256
-q_lr = 0.001
-rho_lr = 0.0001
+q_lr = 0.01
+rho_lr = 0.001
 eps = 0.1
 enable_cuda = False
 rho_init = 0
@@ -26,23 +27,35 @@ episode_len = 500
 
 # Define a cost function to be used in our cost-aware environment
 # Working cost function
-def cost_fn(state):
+def cost_fn_mountain(state):
+    # gets bigger as you go further to the right
     return max(state[0] + 0.7, 0.1) ** 2
 
-# TODO NOT working
-def cost_fn1(state):
+def cost_fn_mountain2(state):
+    # gets smaller as you go further to the right
+    return (0.7 - state[0]) ** 2
+
+def cost_fn_mountain3(state):
+    # small cost for being to the right of 0.4, cost of 1 otherwise
+    return max(1 * (state[0] < 0.1), 0.01)
+
+def cost_fn_mountain4(state):
+    # multiple tiers of decreasing costs as goal state 0.5 is appraoched
+    loc = state[0]
+    return min(1 - 0.99 * (loc >= 0.5),
+               1 - 0.9 * (loc > 0.2))
+
+def cost_fn_cartpole(state):
+    angle = state[2]
     position = state[0]
-    if position >= 0:
-        cost = (position+1.3) ** 2
-    else:
-        cost = 0.1**2
+    cost = (abs(angle)*2 + abs(position)/5)**2
     return cost
 
 
 if __name__ == '__main__':
 
     # create env
-    env = MountainCarCostAwareEnv(cost_fn=cost_fn)
+    env = MountainCarCostAwareEnv(cost_fn=cost_fn_mountain4)
     env.reset()
 
     # gather info about the env
@@ -78,6 +91,7 @@ if __name__ == '__main__':
             action = agent.sample_action(env.state)
             state, reward_cost_tuple, done, _ = env.step(action)
             reward, cost = reward_cost_tuple
+            reward = -reward
             rewards.append(reward)
             costs.append(cost)
             agent.update(reward_cost_tuple, state)

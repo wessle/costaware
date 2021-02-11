@@ -1,0 +1,59 @@
+# This is an example config file specifying an experiment composed of
+# two sets of trials. Each trial set will be repeated num_replications times.
+
+
+output_dir: 'test_experiment'
+
+# Ray configs
+ray_config:
+  num_cpus: 30
+  cpus_per_trial: 2
+  num_gpus: 0
+  gpus_per_trial: 0
+
+# Each element in trial_sets contains:
+#   + number of replications to be run
+#   + list of seeds to be used
+#   + a name for the trial_set
+#   + the configs needed to specify the trials
+trial_sets:
+
+  - trial_set_name: 'deep_Q_trials'
+    num_replications: 15
+    seeds: []
+
+    trial:
+      # Environment configs
+      envs_module_name: 'main.experimental.experimental_envs'
+      env_config:
+        class: 'MountainCarCostAwareEnvPositiveReward'
+          # class: 'CartPoleCostAwareEnv'
+        args: []  # [num_states, num_actions, reward_fnc, cost_fnc]
+        kwargs: {}
+      
+      # Agent configs
+      agents_module_name: 'main.core.agents'
+      agent_config:
+        class: 'DeepRVIQAgentStandardQ'
+        args: [100_000, 256, [0, 1, 2], 2, 1, 0.001, 0.0001]
+          # bufflen, batchsize, actions, state_dim, action_dim, q_lr, rho_lr
+        kwargs: {eps: 0.01, enable_cuda: False}
+      
+      # IOManager configs
+      iomanager_config:
+        class: Null  # Will break if not specified at runtime
+        args: ['test_data']  # Output directory
+        kwargs:
+          print_interval: 500
+          log_interval: 500
+          agent_name: Null  # specified at runtime
+          filename: 'ratios'  # specified at runtime
+      
+      # Trial configs
+      trial_config:
+        width: 500  # Width of window for computing moving averages
+        n_steps: 500
+        n_episodes: 100
+        log: True
+        plot: False
+        print: True

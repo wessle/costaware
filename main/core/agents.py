@@ -182,7 +182,8 @@ class DeepRVIQLearningBasedAgent(DeepRLAgent):
 
             # perform the rho update
             # ref_state_val = self.ref_state_val().item() # not working 10/21
-            self.ref_val_est = 0.99 * self.ref_val_est + 0.01 * proxy_rewards.mean() # working 10/21
+            self.ref_val_est = 0.99 * self.ref_val_est + \
+                    0.01 * proxy_rewards.mean() # working 10/21
             ref_state_val = self.ref_val_est
             self.rho += np.sign(ref_state_val) * min(
                 self.rho_clip_radius, self.rho_lr * abs(ref_state_val))
@@ -228,12 +229,11 @@ class DeepRVIQAgentStandardQ(DeepRVIQLearningBasedAgent):
     def __init__(self, buffer_maxlen, batchsize, actions,
                  state_dim, action_dim,
                  q_lr, rho_lr,
-                 q_layer1_size=64, q_layer2_size=64,
+                 q_layer1_size=256, q_layer2_size=256,
                  eps=0.01, enable_cuda=True, optimizer=torch.optim.Adam,
                  grad_clip_radius=None,
-                 rho_init=0.0, rho_clip_radius=None):
-
-        raise NotImplementedError
+                 rho_init=0.0, rho_clip_radius=None,
+                 ref_state=None):
 
         Q = wesutils.two_layer_net(state_dim + action_dim, 1,
                                    q_layer1_size, q_layer2_size)
@@ -244,6 +244,9 @@ class DeepRVIQAgentStandardQ(DeepRVIQLearningBasedAgent):
                          optimizer=optimizer,
                          grad_clip_radius=grad_clip_radius,
                          rho_init=rho_init, rho_clip_radius=rho_clip_radius)
+
+        if ref_state is not None:
+            self.set_reference_state(ref_state)
 
 
 class DeepACAgent(DeepRLAgent):
@@ -336,6 +339,7 @@ class DeepACAgent(DeepRLAgent):
         self.mu_c = self.mu_lr * cost + (1 - self.mu_lr) * self.mu_c
 
         if len(self.buffer) >= self.N:
+
             # actions are not needed for these updates, so ignore them
             states, _, rewards, costs, next_states = \
                     wesutils.arrays_to_tensors(self.buffer.sample(self.N),
@@ -383,7 +387,7 @@ class DeepACAgent(DeepRLAgent):
                     r_td_err/r_mean - c_td_err/c_mean)).squeeze()
             _, log_pis = self.pi.sample(states)
 
-            pi_loss = -err_vector.dot(log_pis)
+            pi_loss = -err_vector.dot(log_pis.squeeze())
             self.pi_optim.zero_grad()
             pi_loss.backward()
             if self.grad_clip_radius is not None:

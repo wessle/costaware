@@ -43,6 +43,23 @@ class MountainCarCostAwareEnv(MountainCarEnv):
         return state, (reward, self.cost_fn(state)), done, d
 
 
+class MountainCarCostAwareEnvPositiveReward(MountainCarCostAwareEnv):
+    """
+    Version of the above with specific cost and altered reward.
+
+    For use in specific trials, should be removed in public release.
+    """
+
+    def __init__(self, cost_fn):
+
+        super().__init__(cost_fn=cost_fn)
+
+    def step(self, action):
+        state, rc_tuple, done, d = MountainCarCostAwareEnv.step(self, action)
+        rc_tuple = -rc_tuple[0], rc_tuple[1]
+        return state, rc_tuple, done, d
+
+
 class AcrobotCostAwareEnv(AcrobotEnv):
     """
     Extension of the OpenAI Acrobot to include a cost as well as

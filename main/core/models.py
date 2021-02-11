@@ -42,7 +42,7 @@ class CategoricalPolicy(PolicyNetwork):
     def sample(self, state, no_log_prob=False):
         probs = self.forward(state)
         dist = td.Categorical(probs)
-        action = dist.sample()
+        action = dist.sample(sample_shape=torch.tensor([1]))
         return action if no_log_prob else (action, dist.log_prob(action))
 
 
@@ -55,7 +55,7 @@ class CategoricalPolicyTwoLayer(CategoricalPolicy):
     def __init__(self, state_dim, num_actions,
                  hidden_layer1_size=256,
                  hidden_layer2_size=256,
-                 init_std=0.0001):
+                 init_std=0.01):
 
         super().__init__(state_dim, num_actions)
 

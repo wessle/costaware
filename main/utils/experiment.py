@@ -48,12 +48,19 @@ class IOManager:
                 step_episode += '/' + '{:{}d}:'.format(kwargs['episode'], ewidth)
 
             
-            if kwargs['step'] % self.print_interval == 0:
+#            if kwargs['step'] % self.print_interval == 0:
+#                print(' '.join([f'{self.agent_name}',
+#                                step_episode,
+#                                f'(rho={kwargs["ratio"]:.2f},',
+#                                f'state={kwargs["state"]},',
+#                                f'action={kwargs["action"]})']))
+
+            if kwargs['done']:
                 print(' '.join([f'{self.agent_name}',
                                 step_episode,
                                 f'(rho={kwargs["ratio"]:.2f},',
-                                f'state={kwargs["state"]},',
-                                f'action={kwargs["action"]})']))
+                                f'rewards={kwargs["reward"]:.2f},',
+                                f'ave_cost={kwargs["ave_cost"]:.2f})']))
 
     def log(self, dont_skip, **kwargs):
         """
@@ -93,11 +100,6 @@ class IOManager:
 
             plot_file = os.path.join(self.output_dir, self.filename + '.png')
             fig.savefig(plot_file, **kwargs['plot_kwargs']) 
-
-    # def save_yml(self, **kwargs):
-    #     yaml_file = os.path.join(self.output_dir, self.filename + '.yml')
-    #     with open(yaml_file, 'w') as out:
-    #         out.write(yaml.safe_dump(kwargs['dictionary']))
 
     def save_yml(self, filename, dictionary):
         yaml_file = os.path.join(self.output_dir, filename + '.yml')
@@ -177,13 +179,20 @@ class TrialRunner:
                 costs.append(cost)
                 ratios.append(np.mean(rewards) / np.mean(costs))
     
+#                self.io.print(self.print, episode=episode, step=step,
+#                              n_episodes=self.n_episodes, n_steps=self.n_steps,
+#                              ratio=ratios[-1], state=self.env.state, action=action)
+
                 self.io.print(self.print, episode=episode, step=step,
                               n_episodes=self.n_episodes, n_steps=self.n_steps,
-                              ratio=ratios[-1], state=self.env.state, action=action)
+                              ratio=ratios[-1], state=self.env.state, action=action,
+                              done=done, reward=len(rewards), ave_cost=sum(costs)/len(costs))
 
                 self.io.log(self.log, episode=episode, step=step, ratios=ratios)
 
                 if done: # Episode is over, start the next one
+                    rewards.clear()
+                    costs.clear()
                     break
 
         self.io.print(self.print, episode=episode, step=step, ratio=ratios[-1],

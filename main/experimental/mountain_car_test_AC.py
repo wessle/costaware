@@ -7,17 +7,19 @@ from main.core import agents
 from main.core import models
 from main.experimental.experimental_envs import MountainCarCostAwareEnv
 
+
 # network and agent parameters
-Q_hidden_units = 256
+net_width = 16
 buffer_maxlen = 100000
-batchsize = 256
-q_lr = 0.001
-rho_lr = 0.0001
-eps = 0.1
+batchsize = 64
+policy_lr = 0.01
+v_lr = 0.01
+init_mu_r = 0
+init_mu_c = 0
+mu_lr = 0.005
 enable_cuda = False
-rho_init = 0
 grad_clip_radius = None
-rho_clip_radius = None
+reward_cost_mean_floor = 1e-8
 
 # experiment parameters
 num_episodes = 100
@@ -28,15 +30,6 @@ episode_len = 500
 # Working cost function
 def cost_fn(state):
     return max(state[0] + 0.7, 0.1) ** 2
-
-# TODO NOT working
-def cost_fn1(state):
-    position = state[0]
-    if position >= 0:
-        cost = (position+1.3) ** 2
-    else:
-        cost = 0.1**2
-    return cost
 
 
 if __name__ == '__main__':
@@ -51,23 +44,25 @@ if __name__ == '__main__':
     assert isinstance(env.action_space, Discrete), 'action space must be 1D'
     action_dim = 1
 
-    # create Q function and agent
-    Q = wesutils.two_layer_net(state_dim + action_dim, 1,
-                               Q_hidden_units, Q_hidden_units)
-    agent = agents.DeepRVIQLearningBasedAgent(
-        buffer_maxlen, batchsize, np.arange(3),
-        Q, q_lr, rho_lr,
-        eps=eps,
+    # create agent
+    policy = models.CategoricalPolicyTwoLayer(state_dim, num_actions,
+                                              net_width, net_width)
+    v_net = wesutils.two_layer_net(state_dim, 1)
+    agent = agents.DeepACAgent(
+        buffer_maxlen, batchsize,
+        policy, v_net,
+        policy_lr, v_lr,
+        init_mu_r=init_mu_r, init_mu_c=init_mu_c,
+        mu_lr=mu_lr,
         enable_cuda=enable_cuda,
-        rho_init=rho_init,
         grad_clip_radius=grad_clip_radius,
-        rho_clip_radius=rho_clip_radius)
-    agent.set_reference_state(env.state)
+        reward_cost_mean_floor=reward_cost_mean_floor
+    )
+
 
     # create formats for printing output
-    fmt = '{:^5s} | {:^10s} | {:^10s} | {:^10s} | {:^10s} | {:^10s} | {:^10s}'
-    fmt_vals = '{:^5} | {:^10.2f} | {:^10.2f} | {:^10.2f} | {:^10.2f} | ' + \
-            '{:^10.2f} | {:^10.2f}'
+    fmt = '{:^5s} | {:^10s} | {:^10s} | {:^10s} | {:^10s}'
+    fmt_vals = '{:^5} | {:^10.2f} | {:^10.2f} | {:^10.2f} | {:^10.2f}'
 
     # run the experiment
     end_values, rhos = [], []
@@ -75,7 +70,7 @@ if __name__ == '__main__':
         rewards, costs = [], []
         t0 = time()
         for _ in range(episode_len):
-            action = agent.sample_action(env.state)
+            action = agent.sample_action(env.state)[0]
             state, reward_cost_tuple, done, _ = env.step(action)
             reward, cost = reward_cost_tuple
             rewards.append(reward)
@@ -90,8 +85,8 @@ if __name__ == '__main__':
 
         if i % 20 == 0:
             print(fmt.format(
-                'ep', 'rew', 'cost', 'time(s)', 'rho', 'val_est', 'Vsref'))
+                'ep', 'rew', 'cost', 'time(s)', 'rho'))
         print(fmt_vals.format(i, *end_values[-1], time() - t0,
-            rhos[-1], agent.ref_val_est, agent.ref_state_val()))
+            rhos[-1]))
 
         env.reset()
