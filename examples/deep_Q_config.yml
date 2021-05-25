@@ -6,8 +6,8 @@ output_dir: 'test_experiment'
 
 # Ray configs
 ray_config:
-  num_cpus: 30
-  cpus_per_trial: 2
+  num_cpus: 6
+  cpus_per_trial: 1
   num_gpus: 0
   gpus_per_trial: 0
 
@@ -19,15 +19,16 @@ ray_config:
 trial_sets:
 
   - trial_set_name: 'deep_Q_trials'
-    num_replications: 15
+    num_replications: 4
     seeds: []
 
     trial:
       # Environment configs
       envs_module_name: 'main.experimental.experimental_envs'
       env_config:
-        class: 'MountainCarCostAwareEnvPositiveReward'
-          # class: 'CartPoleCostAwareEnv'
+        # class: 'MountainCarCostAwareEnvPositiveReward'
+        # class: 'CartPoleCostAwareEnv'
+        class: 'AcrobotCostAwareEnv'
         args: []  # [num_states, num_actions, reward_fnc, cost_fnc]
         kwargs: {}
       
@@ -35,9 +36,9 @@ trial_sets:
       agents_module_name: 'main.core.agents'
       agent_config:
         class: 'DeepRVIQAgentStandardQ'
-        args: [100_000, 256, [0, 1, 2], 2, 1, 0.001, 0.0001]
+        args: [100_000, 256, [0, 1, 2], 6, 1, 0.001, 0.0001]
           # bufflen, batchsize, actions, state_dim, action_dim, q_lr, rho_lr
-        kwargs: {eps: 0.01, enable_cuda: False}
+        kwargs: {eps: 0.1, enable_cuda: False}
       
       # IOManager configs
       iomanager_config:

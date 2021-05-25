@@ -6,7 +6,7 @@ output_dir: 'test_experiment'
 
 # Ray configs
 ray_config:
-  num_cpus: 30
+  num_cpus: 6
   cpus_per_trial: 1
   num_gpus: 0
   gpus_per_trial: 0
@@ -19,7 +19,7 @@ ray_config:
 trial_sets:
 
   - trial_set_name: 'Q_trials'
-    num_replications: 15
+    num_replications: 3
     seeds: []
 
     trial:
@@ -51,7 +51,7 @@ trial_sets:
       # Trial configs
       trial_config:
         width: 1000  # Width of window for computing moving averages
-        n_steps: 500_000
+        n_steps: 100_000
         n_episodes: 1
         log: True
         plot: False
@@ -59,7 +59,7 @@ trial_sets:
 
 
   - trial_set_name: 'AC_trials'
-    num_replications: 15
+    num_replications: 3
     seeds: []
 
     trial:

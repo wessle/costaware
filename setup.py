@@ -6,6 +6,10 @@ setup(
     packages=find_packages(),
     python_requires='>=3.6',
     install_requires=[
+        'matplotlib',
+        'pandas',
+        'seaborn',
+        'ray',
         'numpy',
         'torch',
         'pyyaml',

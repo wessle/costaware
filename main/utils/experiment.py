@@ -48,19 +48,19 @@ class IOManager:
                 step_episode += '/' + '{:{}d}:'.format(kwargs['episode'], ewidth)
 
             
-#            if kwargs['step'] % self.print_interval == 0:
-#                print(' '.join([f'{self.agent_name}',
-#                                step_episode,
-#                                f'(rho={kwargs["ratio"]:.2f},',
-#                                f'state={kwargs["state"]},',
-#                                f'action={kwargs["action"]})']))
-
-            if kwargs['done']:
+            if kwargs['step'] % self.print_interval == 0:
                 print(' '.join([f'{self.agent_name}',
                                 step_episode,
                                 f'(rho={kwargs["ratio"]:.2f},',
-                                f'rewards={kwargs["reward"]:.2f},',
-                                f'ave_cost={kwargs["ave_cost"]:.2f})']))
+                                f'state={kwargs["state"]},',
+                                f'action={kwargs["action"]})']))
+
+#            if kwargs['done']:
+#                print(' '.join([f'{self.agent_name}',
+#                                step_episode,
+#                                f'(rho={kwargs["ratio"]:.2f},',
+#                                f'rewards={kwargs["reward"]:.2f},',
+#                                f'ave_cost={kwargs["ave_cost"]:.2f})']))
 
     def log(self, dont_skip, **kwargs):
         """
@@ -179,18 +179,20 @@ class TrialRunner:
                 costs.append(cost)
                 ratios.append(np.mean(rewards) / np.mean(costs))
     
-#                self.io.print(self.print, episode=episode, step=step,
-#                              n_episodes=self.n_episodes, n_steps=self.n_steps,
-#                              ratio=ratios[-1], state=self.env.state, action=action)
+                ### Tabular, continuing env printing
+                # self.io.print(self.print, episode=episode, step=step,
+                #               n_episodes=self.n_episodes, n_steps=self.n_steps,
+                #               ratio=ratios[-1], state=self.env.state, action=action)
 
-                self.io.print(self.print, episode=episode, step=step,
-                              n_episodes=self.n_episodes, n_steps=self.n_steps,
-                              ratio=ratios[-1], state=self.env.state, action=action,
-                              done=done, reward=len(rewards), ave_cost=sum(costs)/len(costs))
+                ### Deep, episodic env printing
+                if done or (step == self.n_steps - 1): # Episode is over, start the next one
+                    self.io.print(self.print, episode=episode, step=step,
+                                  n_episodes=self.n_episodes, n_steps=self.n_steps,
+                                  ratio=ratios[-1], state=self.env.state, action=action,
+                                  done=done, reward=len(rewards), ave_cost=sum(costs)/len(costs))
 
-                self.io.log(self.log, episode=episode, step=step, ratios=ratios)
+                    self.io.log(self.log, episode=episode, step=step, ratios=ratios)
 
-                if done: # Episode is over, start the next one
                     rewards.clear()
                     costs.clear()
                     break

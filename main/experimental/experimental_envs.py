@@ -42,6 +42,9 @@ class MountainCarCostAwareEnv(MountainCarEnv):
         state, reward, done, d = MountainCarEnv.step(self, action)
         return state, (reward, self.cost_fn(state)), done, d
 
+    def get_ob(self):
+        return np.array(self.state)
+
 
 class MountainCarCostAwareEnvPositiveReward(MountainCarCostAwareEnv):
     """
@@ -74,7 +77,7 @@ class AcrobotCostAwareEnv(AcrobotEnv):
     def __init__(self, cost_fn=lambda x: 1.0):
         AcrobotEnv.__init__(self)
         self.cost_fn = cost_fn
-
+    
     def step(self, action):
         state, reward, done, d = AcrobotEnv.step(self, action)
         return state, (reward, self.cost_fn(state)), done, d
