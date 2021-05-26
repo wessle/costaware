@@ -1,4 +1,0 @@
-eps: 0.2
-q_lr: 0.001
-rho_init: 0
-rho_lr: 1.0e-05
