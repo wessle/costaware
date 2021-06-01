@@ -9,13 +9,13 @@ import costaware.utils.experiment as experiment
 
 
 parser = argparse.ArgumentParser(
-    'python experiment_runner_experiment_config.py'
+    'python tabular_runner.py'
 )
 parser.add_argument('--output_dir', type=str,
                     default=None,
                     help='Directory to store trial data in')
 parser.add_argument('--config', type=str,
-                    default='experiment_config.yml',
+                    default='tabular_config.yml',
                     help='Filename of YAML file containing trial configs')
 args = parser.parse_args()
 

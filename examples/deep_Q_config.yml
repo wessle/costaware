@@ -57,3 +57,4 @@ trial_sets:
         log: True
         plot: False
         print: True
+        agent_type: 'deep'

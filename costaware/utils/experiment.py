@@ -144,9 +144,13 @@ class TrialRunner:
                     'print': True,
                     'print_interval': 10000,
                     'log_interval': 10000,
-                    'agent_name': type(agent).__name__}
+                    'agent_name': type(agent).__name__,
+                    'agent_type': None}
         defaults.update(kwargs)
         self.__dict__.update(**defaults)
+
+        assert self.agent_type in {'tabular', 'deep'}, \
+                'Agent type must be either tabular or deep'
 
     def train(self):
         """
@@ -170,24 +174,27 @@ class TrialRunner:
                 rewards.append(reward) 
                 costs.append(cost)
                 ratios.append(np.mean(rewards) / np.mean(costs))
-    
-                ### Tabular, continuing env printing
-                # self.io.print(self.print, episode=episode, step=step,
-                #               n_episodes=self.n_episodes, n_steps=self.n_steps,
-                #               ratio=ratios[-1], state=self.env.state, action=action)
 
-                ### Deep, episodic env printing
-                if done or (step == self.n_steps - 1): # Episode is over, start the next one
+                ### Tabular, continuing env printing
+                if self.agent_type == 'tabular':
                     self.io.print(self.print, episode=episode, step=step,
                                   n_episodes=self.n_episodes, n_steps=self.n_steps,
-                                  ratio=ratios[-1], state=self.env.state, action=action,
-                                  done=done, reward=len(rewards), ave_cost=sum(costs)/len(costs))
+                                  ratio=ratios[-1], state=self.env.state, action=action)
 
-                    self.io.log(self.log, episode=episode, step=step, ratios=ratios)
+                ### Deep, episodic env printing
+                elif self.agent_type == 'deep':
+                    if done or (step == self.n_steps - 1): # Episode is over, start the next one
+                        self.io.print(self.print, episode=episode, step=step,
+                                      n_episodes=self.n_episodes, n_steps=self.n_steps,
+                                      ratio=ratios[-1], state=self.env.state, action=action,
+                                      done=done, reward=len(rewards),
+                                      ave_cost=sum(costs)/len(costs))
 
-                    rewards.clear()
-                    costs.clear()
-                    break
+                        self.io.log(self.log, episode=episode, step=step, ratios=ratios)
+
+                        rewards.clear()
+                        costs.clear()
+                        break
 
         self.io.print(self.print, episode=episode, step=step, ratio=ratios[-1],
                       state=self.env.state, action=action)

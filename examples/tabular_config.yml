@@ -56,6 +56,7 @@ trial_sets:
         log: True
         plot: False
         print: True
+        agent_type: 'tabular'
 
 
   - trial_set_name: 'AC_trials'
@@ -103,3 +104,4 @@ trial_sets:
         log: True
         plot: False
         print: True
+        agent_type: 'tabular'
