@@ -20,6 +20,20 @@ parser.add_argument('--data_dir', type=str,
 args = parser.parse_args()
 
 def directories(path):
+    """
+    Returns a generator that iterates through all of the directories located in
+    a specified path.
+
+    Params
+    ------
+    path : str
+        Path (relative or absolute) to search for directories
+
+    Returns
+    -------
+    dirs : generator
+        Iterates through the directories of the path
+    """
     return filter(
         lambda name: os.path.isdir(os.path.join(path, name)),
         os.listdir(path)
@@ -27,10 +41,23 @@ def directories(path):
 
 
 def get_data(root=args.data_dir, drop=500, n_steps_to_skip=500):
+    """
+    Params
+    ------
+    root : str (default=args.data_dir)
+    drop : int (default=500)
+    n_steps_to_skip : int (default=500)
+
+    Returns
+    -------
+    data : pd.DataFrame
+    """
     data = []
     for sd_name in directories(root):
+        print(sd_name)
         sub_directory = os.path.join(root, sd_name)
         for experiment, ssd_name in enumerate(directories(sub_directory)):
+            print(ssd_name)
             subsub_directory = os.path.join(sub_directory, ssd_name)
             ratios = np.load(os.path.join(subsub_directory, 'ratios.npy'))
             config = yaml.safe_load(

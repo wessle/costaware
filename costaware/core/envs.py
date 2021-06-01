@@ -3,7 +3,7 @@ import numpy as np
 from gym import spaces
 from itertools import product
 
-import main.utils.defaults as defaults
+import costaware.utils.defaults as defaults
 
 
 # Synthetic cost-aware MDP environment

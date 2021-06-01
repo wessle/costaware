@@ -1,9 +1,9 @@
 import argparse
 import importlib
 
-import main.utils.experiment as experiment
-from main.core.envs import RandomMDPEnv
-from main.core.agents import TabularQAgent
+import costaware.utils.experiment as experiment
+from costaware.core.envs import RandomMDPEnv
+from costaware.core.agents import TabularQAgent
 
 
 parser = argparse.ArgumentParser(

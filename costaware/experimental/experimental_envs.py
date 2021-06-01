@@ -3,7 +3,7 @@ import os
 import numpy as np
 from copy import deepcopy
 
-from main.experimental.util import module_from_path
+from costaware.experimental.util import module_from_path
 
 # Obtain the mountain_car module so we can subclass MountainCarEnv
 mount_car_file = deepcopy(*gym.envs.__path__) + '/classic_control/mountain_car.py'

@@ -9,7 +9,7 @@ from collections import deque, namedtuple
 from itertools import product
 
 
-import main.core.envs as envs
+import costaware.core.envs as envs
 
 class IOManager:
     """
@@ -54,13 +54,6 @@ class IOManager:
                                 f'(rho={kwargs["ratio"]:.2f},',
                                 f'state={kwargs["state"]},',
                                 f'action={kwargs["action"]})']))
-
-#            if kwargs['done']:
-#                print(' '.join([f'{self.agent_name}',
-#                                step_episode,
-#                                f'(rho={kwargs["ratio"]:.2f},',
-#                                f'rewards={kwargs["reward"]:.2f},',
-#                                f'ave_cost={kwargs["ave_cost"]:.2f})']))
 
     def log(self, dont_skip, **kwargs):
         """

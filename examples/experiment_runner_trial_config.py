@@ -4,7 +4,7 @@ from importlib import import_module
 from copy import deepcopy
 
 
-import main.utils.experiment as experiment
+import costaware.utils.experiment as experiment
 
 
 parser = argparse.ArgumentParser(

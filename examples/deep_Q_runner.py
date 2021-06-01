@@ -6,7 +6,7 @@ from copy import deepcopy
 import numpy as np
 
 
-import main.utils.experiment as experiment
+import costaware.utils.experiment as experiment
 
 
 # cost_fn for CostAwareEnv

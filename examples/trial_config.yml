@@ -2,7 +2,7 @@
 
 
 # Environment configs
-envs_module_name: 'main.core.envs'
+envs_module_name: 'costaware.core.envs'
 env_config:
   class: 'RandomMDPEnv'
   args: [5, 5, 'r1', 'c1']  # [num_states, num_actions, reward_fnc, cost_fnc]
@@ -10,7 +10,7 @@ env_config:
     transition_seed: 1066
 
 # Agent configs
-agents_module_name: 'main.core.agents'
+agents_module_name: 'costaware.core.agents'
 agent_config:
   class: 'TabularQAgent'
   args: [0.01, 0.001] # [q_lr, rho_lr]

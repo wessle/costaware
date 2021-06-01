@@ -23,7 +23,7 @@ trial_sets:
 
     trial:
       # Environment configs
-      envs_module_name: 'main.core.envs'
+      envs_module_name: 'costaware.core.envs'
       env_config:
         class: 'RandomMDPEnv'
         args: [5, 5, 'r5', 'c4']  # [num_states, num_actions, reward_fnc, cost_fnc]
@@ -31,7 +31,7 @@ trial_sets:
           transition_seed: 1492
       
       # Agent configs
-      agents_module_name: 'main.core.agents'
+      agents_module_name: 'costaware.core.agents'
       agent_config:
         class: 'DeepRVIQLearningBasedAgent'
         args: [100_000, 256, 0.01, 0.001] # [buffer_maxlen, batchsize, q_lr, rho_lr]

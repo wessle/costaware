@@ -24,7 +24,7 @@ trial_sets:
 
     trial:
       # Environment configs
-      envs_module_name: 'main.experimental.experimental_envs'
+      envs_module_name: 'costaware.experimental.experimental_envs'
       env_config:
         # class: 'MountainCarCostAwareEnvPositiveReward'
         # class: 'CartPoleCostAwareEnv'
@@ -33,7 +33,7 @@ trial_sets:
         kwargs: {}
       
       # Agent configs
-      agents_module_name: 'main.core.agents'
+      agents_module_name: 'costaware.core.agents'
       agent_config:
         class: 'DeepRVIQAgentStandardQ'
         args: [100_000, 256, [0, 1, 2], 6, 1, 0.001, 0.0001]

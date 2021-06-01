@@ -5,7 +5,7 @@ import os
 from copy import deepcopy
 
 
-import main.utils.experiment as experiment
+import costaware.utils.experiment as experiment
 
 
 parser = argparse.ArgumentParser(

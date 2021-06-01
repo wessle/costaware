@@ -24,7 +24,7 @@ trial_sets:
 
     trial:
       # Environment configs
-      envs_module_name: 'main.core.envs'
+      envs_module_name: 'costaware.core.envs'
       env_config:
         class: 'RandomMDPEnv'
         args: [10, 10, 'r1', 'c1']  # [num_states, num_actions, reward_fnc, cost_fnc]
@@ -32,7 +32,7 @@ trial_sets:
           transition_seed: 1776
       
       # Agent configs
-      agents_module_name: 'main.core.agents'
+      agents_module_name: 'costaware.core.agents'
       agent_config:
         class: 'TabularQAgent'
         args: [0.01, 0.005] # [q_lr, rho_lr]
@@ -64,7 +64,7 @@ trial_sets:
 
     trial:
       # Environment configs
-      envs_module_name: 'main.core.envs'
+      envs_module_name: 'costaware.core.envs'
       env_config:
         class: 'RandomMDPEnv'
         args: [10, 10, 'r1', 'c1']  # [num_states, num_actions, reward_fnc, cost_fnc]
@@ -72,7 +72,7 @@ trial_sets:
           transition_seed: 1776
       
       # Agent configs
-      agents_module_name: 'main.core.agents'
+      agents_module_name: 'costaware.core.agents'
       agent_config:
         class: 'LinearACAgentOneToOneBasis'
         args: [0.0001, 0.0001] # [pi_lr, v_lr]
