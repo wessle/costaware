@@ -4,6 +4,7 @@ costaware.egg-info
 **__pycache__
 **.swp
 data/*
+**.un~
 
 !data/empty.txt
 !.gitignore
