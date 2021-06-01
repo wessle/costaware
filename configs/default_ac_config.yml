@@ -1,7 +1,0 @@
-grad_clip_radius: null
-init_mu_c: 1
-init_mu_r: 1
-mu_floor: 0.01
-mu_lr: 0.0001
-policy_lr: 0.0001
-v_lr: 0.001

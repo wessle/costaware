@@ -1,6 +1,0 @@
-costs: "c1"
-num_actions: 10
-num_states: 10
-rewards: "r1"
-training_seed: null
-transition_seed: null
