@@ -47,8 +47,7 @@ class IOManager:
                 ewidth = int(np.log10(kwargs['n_episodes'])) + 1
                 step_episode += '/' + '{:{}d}:'.format(kwargs['episode'], ewidth)
 
-            
-            if kwargs['step'] % self.print_interval == 0:
+            if (kwargs['step'] + 1) % self.print_interval == 0:
                 print(' '.join([f'{self.agent_name}',
                                 step_episode,
                                 f'(rho={kwargs["ratio"]:.2f},',
@@ -63,7 +62,7 @@ class IOManager:
         Any callback with this signature may be used instead, but this is a
         reasonable default behavior.
         """
-        if kwargs.get('force') or (dont_skip and kwargs['step'] % self.log_interval == 0):
+        if kwargs.get('force') or (dont_skip and (kwargs['step'] + 1) % self.log_interval == 0):
             npy_file = os.path.join(self.output_dir, self.filename + '.npy')
             np.save(npy_file, kwargs['ratios'])
 

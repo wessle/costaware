@@ -15,31 +15,8 @@ def cost_fn_mountain(state):
     loc = state[0]
     return min(1 - 0.99 * (loc >= 0.5),
                1 - 0.9 * (loc > 0.2))
-    
-def cost_fn_cartpole_OLD(state):
-    angle = state[2]
-    position = state[0]
-    cost = (abs(angle)*2 + abs(position)/5)**2
-    #cost = (0.5 + 0.7*abs(state[2]*0.3) + 0.3*abs(state[0]/7))**2
-    return 10 * cost
 
-def cost_fn_cartpole(state):
-    position = state[0]
-    angle = state[2]
-    return max(0.001, abs(angle)**2 + abs(position)**2)
-
-def cost_fn_acrobot(state):
-    height = -np.cos(state[0]) - np.cos(state[1] + state[0])
-    # Height > 0, give greater cost for higher point
-    if height > 0:
-        cost = (max(1 + height, 1.2))**2
-    # OW give cost according to first angle
-    else:
-        cost = (1 - (state[0]/5))**2
-    return cost
-
-
-cost_fn = cost_fn_acrobot
+cost_fn = cost_fn_mountain
 
 
 parser = argparse.ArgumentParser(
