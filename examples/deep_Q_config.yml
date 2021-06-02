@@ -24,7 +24,7 @@ trial_sets:
 
     trial:
       # Environment configs
-      envs_module_name: 'costaware.experimental.experimental_envs'
+      envs_module_name: 'costaware.core.envs'
       env_config:
         class: 'MountainCarCostAwareEnvPositiveReward'
         args: []  # [num_states, num_actions, reward_fnc, cost_fnc]
