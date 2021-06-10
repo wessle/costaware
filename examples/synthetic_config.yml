@@ -6,7 +6,7 @@ output_dir: 'test_experiment'
 
 # Ray configs
 ray_config:
-  num_cpus: 6
+  num_cpus: 2
   cpus_per_trial: 1
   num_gpus: 0
   gpus_per_trial: 0
@@ -19,7 +19,7 @@ ray_config:
 trial_sets:
 
   - trial_set_name: 'Q_trials'
-    num_replications: 3
+    num_replications: 1
     seeds: []
 
     trial:
@@ -60,7 +60,7 @@ trial_sets:
 
 
   - trial_set_name: 'AC_trials'
-    num_replications: 3
+    num_replications: 1
     seeds: []
 
     trial:

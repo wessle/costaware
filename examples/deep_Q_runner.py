@@ -19,24 +19,12 @@ def cost_fn_mountain(state):
 cost_fn = cost_fn_mountain
 
 
-parser = argparse.ArgumentParser(
-    'python deep_Q_runner.py'
-)
-parser.add_argument('--output_dir', type=str,
-                    default=None,
-                    help='Directory to store trial data in')
-parser.add_argument('--config', type=str,
-                    default='deep_Q_config.yml',
-                    help='Filename of YAML file containing trial configs')
-args = parser.parse_args()
+def run_deep_Q(output_dir, config):
 
-
-if __name__ == '__main__':
-
-    with open(args.config, 'r') as f:
+    with open(config, 'r') as f:
         experiment_config = yaml.safe_load(f)
 
-    experiment_output_dir = args.output_dir if args.output_dir is not None \
+    experiment_output_dir = output_dir if output_dir is not None \
             else experiment_config['output_dir']
     assert isinstance(experiment_output_dir, str), 'Specify a valid directory'
 
