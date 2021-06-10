@@ -1,4 +1,35 @@
-### Installation
+# costaware
+
+A repository for performing optimization and reinforcement learning for Cost-Aware Markov Decision Processes (CAMDPs). This is the supplementary repo for the article, "Reinforcement Learning for Cost-Aware Markov Decision Processes", to be published in the _Proceedings of the 38th International Conference on Machine Learning_ in 2021.
+
+## Details
+
+Ratio maximization has applications in areas as diverse as finance, reward shaping for reinforcement
+learning (RL), and the development of safe artificial intelligence.
+
+This repository implements new ratio-maximization RL algorithms as described in the paper. It also implements an easy-to-use suite for setting up experiments on CAMDPs.
+
+### Contributions
+
+* Cost-aware relative value iteration Q-learning (CARVI Q-learning), an adaptation of traditional RVI Q-learning for CAMDPs. This repository implements CARVI Q-learning for an agent with tabular architecture and for agents with neural-network architectures. 
+* Cost-aware actor-critic (CAAC), an adaptation of the traditional actor-critic learning for CAMDPs. This repository also implements CAAC for agents with linear approximators under a variety of feature architectures.
+
+### Features
+
+* "Batteries included" agents fully-implemented for CARVI Q-learning and CAAC, as well as a suite of pre-defined policy, value, and Q-function architectures.
+* Built-in CAMDP environments that adhere to the `gym.Env` API.
+* Cost-aware variations of classic control problems, such as `MountainCar`, `Acrobat`, `Pendulum`, and `CartPole`.
+* Configurable suite for performing cost-aware RL experiments, with customizable configuration files and  simple plotting.
+
+### Requirements
+
+This repository uses Python 3. Package details can be found in the `requirements.txt` file. Major third-party libraries used in this repository include  
+
+* [PyTorch](https://pytorch.org/)
+* [Ray](https://ray.io/)
+* PyData suite: [NumPy](https://numpy.org/), [SciPy](https://www.scipy.org/), [Pandas](https://pandas.pydata.org/), [Matplotlib](https://matplotlib.org/), [Seaborn](https://seaborn.pydata.org/)
+
+## Installation
 
 #### Virtual environment setup
 
@@ -26,7 +57,11 @@ docker run -it --rm --privileged -v COSTAWARE_PATH:/home/costaware costaware
 Any changes made to `/home/costaware` in the container will be reflected
 on the host machine in `COSTAWARE_PATH` and vice versa.
 
-### TODOs
+## Getting Started
+
+
+
+## Project TODOs
 
 - [ ] Get terminal colors working in the container image
 - [ ] Write new TODO list
