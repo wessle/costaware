@@ -11,14 +11,6 @@ import seaborn as sns
 from matplotlib import rc
 
 
-
-parser = argparse.ArgumentParser('python plotter.py')
-parser.add_argument('--data_dir', type=str,
-                    default=None,
-                    help='Directory to store trial data in')
-
-args = parser.parse_args()
-
 def directories(path):
     """
     Returns a generator that iterates through all of the directories located in
@@ -40,11 +32,11 @@ def directories(path):
     )
 
 
-def get_data(root=args.data_dir, drop=500, n_steps_to_skip=500):
+def get_data(root, drop=500, n_steps_to_skip=500):
     """
     Params
     ------
-    root : str (default=args.data_dir)
+    root : str 
     drop : int (default=500)
     n_steps_to_skip : int (default=500)
 
@@ -116,12 +108,43 @@ class Plotter:
 
         return fig, ax
 
-OUTPUT_NAME = 'comparison'
-PLOT_FMT = '.png'
 
-data = get_data(drop=500, n_steps_to_skip=10)
+def plot(data_dir, **kwargs):
+    d = {
+        'drop'            : 500,
+        'n_steps_to_skip' : 10,
+        'ext'             : '.png',
+        'filename'        : 'comparison',
+        'context'         : 'paper',
+        'style'           : 'ticks',
+        'palette'         : 'muted',
+        'xlabel'          : 'steps',
+        'ylabel'          : 'ratios',
+        'title'           : 'title',
+        'confidence'      : 95,
 
-fig, ax = Plotter(confidence=90).plot(data)
-fig.savefig(os.path.join(args.data_dir, OUTPUT_NAME + PLOT_FMT), bbox_inches='tight') 
+    }
+    d.update(kwargs)
+    kwargs = d
 
-data.to_csv(os.path.join(args.data_dir, OUTPUT_NAME + '.csv'))
+    data = get_data(
+        data_dir,
+        drop=kwargs['drop'], n_steps_to_skip=kwargs['n_steps_to_skip']
+    )
+    
+    # save the figure
+    fig, ax = Plotter(**kwargs).plot(data)
+    fig.savefig(
+        os.path.join(
+            data_dir,
+            kwargs['filename'] + '.' + kwargs['ext']
+        ),
+        bbox_inches='tight'
+    ) 
+    
+    # save actual ratio data
+    data.to_csv(
+        os.path.join(
+            data_dir,
+            kwargs['filename'] + '.csv'
+    ))
