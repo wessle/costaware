@@ -63,11 +63,11 @@ The main directory contains a script called `demo.py` that can be used to run th
 
 ```python demo.py synthetic```
 
-is called, the experiment script `synthetic_runner.py` -- which trains tabular Cost-Aware RVI Q-learning (CARVI) Q-learning and Cost-Aware Actor-Critic (CAAC) with linear function approximation on a synthetic CAMDP environment -- will be run using the experiment specified by the file `synthetic_config.yml`. Similarly, if
+is called, the experiment script `synthetic_runner.py` --- which trains tabular Cost-Aware RVI Q-learning (CARVI) Q-learning and Cost-Aware Actor-Critic (CAAC) with linear function approximation on a synthetic CAMDP environment --- will be run using the experiment specified by the file `synthetic_config.yml`. Similarly, if
 
 ```python demo.py deep_Q```
 
-is called, `deep_Q_runner.py` -- which runs a neural network version of CARVI Q-learning on a cost-aware version of a classic Gym environment -- will be run using the experiment specified in `deep_Q_config.yml`. When the experiment is finished running, `demo.py` will also generate a plot of the experiment performance.
+is called, `deep_Q_runner.py` --- which trains a neural network version of CARVI Q-learning on a cost-aware version of a classic Gym environment --- will be run using the experiment specified in `deep_Q_config.yml`. When the experiment is finished running, `demo.py` will also generate a plot of the experiment performance.
 
 ### Configuration Files
 
