@@ -60,9 +60,13 @@ on the host machine in `COSTAWARE_PATH` and vice versa.
 ## Getting Started
 
 The main directory contains a script called `demo.py` that can be used to run the same experiments used for the experimental portion of the paper. Depending on the argument that is passed to it, `demo.py` will use the scripts and configuration files in the `examples` directory to launch an experiment. For example, if
+
 ```python demo.py synthetic```
+
 is called, the experiment script `synthetic_runner.py` -- which trains tabular Cost-Aware RVI Q-learning (CARVI) Q-learning and Cost-Aware Actor-Critic (CAAC) with linear function approximation on a synthetic CAMDP environment -- will be run using the experiment specified by the file `synthetic_config.yml`. Similarly, if
+
 ```python demo.py deep_Q```
+
 is called, `deep_Q_runner.py` -- which runs a neural network version of CARVI Q-learning on a cost-aware version of a classic Gym environment -- will be run using the experiment specified in `deep_Q_config.yml`.
 
 The configuration files `synthetic_config.yml` and `deep_Q_config.yml` contain all the experiment parameters and hyperparameters that one needs to run various types experiments.
