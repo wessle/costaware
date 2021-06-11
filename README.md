@@ -31,27 +31,27 @@ This repository uses Python 3. Package details can be found in the `requirements
 
 ## Installation
 
-#### Virtual environment setup
+#### Virtual Environment Setup
 
-Set up your preferred environment and activate it, e.g. do
+Set up your preferred environment and activate it, e.g. run
 ```bash
-python -m venv .venv
-source .venv/bin/activate
+$ python -m venv .venv
+$ source .venv/bin/activate
 ```
 After cloning, simply `cd` into the repo and do `pip install -e .`.
 
-#### Container setup
+#### Container Setup
 
 Using `docker` or `podman`, first build the image with
 
 ```bash
-docker build -t=costaware -f Dockerfile
+$ docker build -t=costaware -f Dockerfile
 ```
 
 then run it with your local `costaware` repo mounted in the container using
 
 ```bash
-docker run -it --rm --privileged -v COSTAWARE_PATH:/home/costaware costaware
+$ docker run -it --rm --privileged -v COSTAWARE_PATH:/home/costaware costaware
 ```
 
 Any changes made to `/home/costaware` in the container will be reflected
@@ -61,11 +61,15 @@ on the host machine in `COSTAWARE_PATH` and vice versa.
 
 The main directory contains a script called `demo.py` that can be used to run the same experiments used for the experimental portion of the paper. Depending on the argument that is passed to it, `demo.py` will use the scripts and configuration files in the `examples` directory to launch an experiment. For example, if
 
-```python demo.py synthetic```
+```bash
+$ python demo.py synthetic
+```
 
 is called, the experiment script `synthetic_runner.py` -- which trains tabular Cost-Aware RVI Q-learning (CARVI) Q-learning and Cost-Aware Actor-Critic (CAAC) with linear function approximation on a synthetic CAMDP environment -- will be run using the experiment specified by the file `synthetic_config.yml`. Similarly, if
 
-```python demo.py deep_Q```
+```bash
+$ python demo.py deep_Q
+```
 
 is called, `deep_Q_runner.py` -- which runs a neural network version of CARVI Q-learning on a cost-aware version of a classic Gym environment -- will be run using the experiment specified in `deep_Q_config.yml`. When the experiment is finished running, `demo.py` will also generate a plot of the algorithm performance.
 
@@ -83,3 +87,22 @@ An **experiment** consists of
 * the resources to be allocated to each trial replication.
 
 A typical experiment will consist of several replications of the same trial. The output of these replications can then be used to generate nice plots showing average performance across all trials.
+
+### Plotting and Summary
+
+At the end of the training, `demo.py` will produce a summary plot of the training results. This consists of two time series corresponding to the learned optimal ratio for CARVI Q-learning and CAAC. These series are plotted together with confidence intervals. The data used to produce the plots are also written to a summary CSV file.
+
+The script `demo.py` includes a number of ways to optionally customize the plotted output. This includes
+
+* `--confidence` flag to specify the confidence level of the corresponding intervals. *Note*: This value is represented as an integer; e.g., `95` yields the 95% confidence interval.
+* `--title`, `--xlabel`, and `--ylabel` flags that specify the labels on the plotted output.
+* `--filename` and `--ext`, which specify the name of the plot file. Essentially, the resulting data directory will contain files of the form `filename.csv` and `filename.ext`, corresponding to the summary spreadsheet and the plot file, respectively. *Note*:  Extensions are passed to `matplotlib.pyplot.savefig` and are limited by the available file formats in the library. See the [`savefig documentation`](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.savefig.html) here.
+
+A complete description of the available options for the script `demo.py` can be obtained by running
+
+```bash
+$ python demo.py --help
+```
+
+
+
