@@ -59,7 +59,7 @@ on the host machine in `COSTAWARE_PATH` and vice versa.
 
 ## Getting Started
 
-The main directory contains a script called `demo.py` that can be used to run the same experiments used for the experimental portion of the paper. Depending on the argument that is passed to it, `demo.py` will use the scripts and configuration files in the `examples` directory to launch an experiment. For example, if
+The main directory contains a script called `demo.py` that can be used to run the same experiments described in the experimental portion of the paper. Based on the argument passed to it, `demo.py` uses the scripts and configuration files in the `examples` directory to launch an experiment. For example, if
 
 ```python demo.py synthetic```
 
