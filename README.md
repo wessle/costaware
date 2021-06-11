@@ -75,3 +75,9 @@ The configuration files `synthetic_config.yml` and `deep_Q_config.yml` contain a
 * an environment to be trained on,
 * the type of agent to be trained,
 * algorithm hyperparameters.
+An **experiment** consists of
+* one or more trial to be run,
+* the number of replications of each trial to be run,
+* a list of the available resources (CPUs and GPUs),
+* the resources to be allocated to each trial replication.
+A typical experiment will consist of several replications of the same trial. The output of these replications can then be used to generate nice plots showing avereage performance.
