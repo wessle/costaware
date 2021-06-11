@@ -89,4 +89,4 @@ An **experiment** consists of
 
 A typical experiment launched by `demo.py` will consist of several replications of the same trial. The output of these replications can then be used to generate nice plots showing average performance across all trials. After verifying that your machine has sufficient computational resources to match what the configuration file asks for, the trials that make up the experiment are created and run in parallel using Ray. This makes it easy run large numbers of trials at once if you have sufficient resources.
 
-After you've run `demo.py` a few times and see how things work, feel free to start playing with the configuration files to recreate the experiments from the paper or make your own.
+After you've run `demo.py` a few times and see how things work, feel free to start playing with the configuration files to make your own experiments or recreate the experiments from the paper.
