@@ -85,4 +85,8 @@ An **experiment** consists of
 * a list of the available resources (CPUs and GPUs),
 * the resources to be allocated to each trial replication.
 
-A typical experiment will consist of several replications of the same trial. The output of these replications can then be used to generate nice plots showing average performance across all trials. After you've run `demo.py` a few times and see how things work, feel free to start playing with the configuration files.
+### Running Experiments
+
+A typical experiment launched by `demo.py` will consist of several replications of the same trial. The output of these replications can then be used to generate nice plots showing average performance across all trials. After verifying that your machine has sufficient computational resources to match what the configuration file asks for, the trials that make up the experiment are created and run in parallel using Ray. This makes it easy run large numbers of trials at once if you have sufficient resources.
+
+After you've run `demo.py` a few times and see how things work, feel free to start playing with the configuration files.
