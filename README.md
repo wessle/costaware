@@ -71,7 +71,7 @@ is called, `deep_Q_runner.py` -- which runs a neural network version of CARVI Q-
 
 ### Configuration Files
 
-The configuration files `synthetic_config.yml` and `deep_Q_config.yml` contain all the experiment parameters and hyperparameters that one needs to set up and run various types of experiments. After you've run `demo.py` a few times and see how things work, feel free to start playing with the configuration files. In a nutshell, a configuration file specifies an **experiment**, which is composed of one or more **trials**.
+The configuration files `synthetic_config.yml` and `deep_Q_config.yml` contain all the experiment parameters and hyperparameters that one needs to set up and run various types of experiments. In a nutshell, a configuration file specifies an **experiment**, which is composed of one or more **trials**.
 
 A **trial** consists of
 * an environment to be trained on,
@@ -85,4 +85,4 @@ An **experiment** consists of
 * a list of the available resources (CPUs and GPUs),
 * the resources to be allocated to each trial replication.
 
-A typical experiment will consist of several replications of the same trial. The output of these replications can then be used to generate nice plots showing average performance across all trials.
+A typical experiment will consist of several replications of the same trial. The output of these replications can then be used to generate nice plots showing average performance across all trials. After you've run `demo.py` a few times and see how things work, feel free to start playing with the configuration files.
