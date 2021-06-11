@@ -59,34 +59,48 @@ on the host machine in `COSTAWARE_PATH` and vice versa.
 
 ## Getting Started
 
-The main directory contains a script called `demo.py` that can be used to run the same experiments used for the experimental portion of the paper. Depending on the argument that is passed to it, `demo.py` will use the scripts and configuration files in the `examples` directory to launch an experiment. For example, if
+The main directory contains a script called `demo.py` that can be used to run the same experiments described in the experimental portion of the paper. Based on the argument passed to it, `demo.py` uses the scripts and configuration files in the `examples` directory to launch an experiment. For example, if
 
 ```bash
 $ python demo.py synthetic
 ```
 
-is called, the experiment script `synthetic_runner.py` -- which trains tabular Cost-Aware RVI Q-learning (CARVI) Q-learning and Cost-Aware Actor-Critic (CAAC) with linear function approximation on a synthetic CAMDP environment -- will be run using the experiment specified by the file `synthetic_config.yml`. Similarly, if
+is called, the experiment script `synthetic_runner.py` --- which trains tabular Cost-Aware RVI Q-learning (CARVI) Q-learning and Cost-Aware Actor-Critic (CAAC) with linear function approximation on a synthetic CAMDP environment --- will be run using the experiment specified by the file `synthetic_config.yml`. Similarly, if
 
 ```bash
 $ python demo.py deep_Q
 ```
 
-is called, `deep_Q_runner.py` -- which runs a neural network version of CARVI Q-learning on a cost-aware version of a classic Gym environment -- will be run using the experiment specified in `deep_Q_config.yml`. When the experiment is finished running, `demo.py` will also generate a plot of the algorithm performance.
+is called, `deep_Q_runner.py` --- which trains a neural network version of CARVI Q-learning on a cost-aware version of a classic Gym environment --- will be run using the experiment specified in `deep_Q_config.yml`. When the experiment is finished running, `demo.py` will also generate a plot of the experiment performance.
 
 ### Configuration Files
 
-The configuration files `synthetic_config.yml` and `deep_Q_config.yml` contain all the experiment parameters and hyperparameters that one needs to run various types of experiments. In a nutshell, a configuration file specifies an **experiment**, which is composed of one or more **trials**. A **trial** consists of
+The configuration files `synthetic_config.yml` and `deep_Q_config.yml` contain all the experiment parameters and hyperparameters that one needs to set up and run various types of experiments. In a nutshell, a configuration file specifies an **experiment**, which is composed of one or more **trials**.
+
+A **trial** consists of
 * an environment to be trained on,
 * the type of agent to be trained,
-* algorithm hyperparameters.
+* algorithm hyperparameters,
+* the directory to save output to.
 
 An **experiment** consists of
 * one or more trial to be run,
+
 * the number of replications of each trial to be run,
+
 * a list of the available resources (CPUs and GPUs),
+
 * the resources to be allocated to each trial replication.
 
+  
+
 A typical experiment will consist of several replications of the same trial. The output of these replications can then be used to generate nice plots showing average performance across all trials.
+
+### Running Experiments
+
+A typical experiment launched by `demo.py` will consist of several replications of the same trial. The output of these replications can then be used to generate nice plots showing average performance across all trials. After verifying that your machine has sufficient computational resources to match what the configuration file asks for, the trials that make up the experiment are created and run in parallel using Ray. This makes it easy run large numbers of trials at once if you have sufficient resources.
+
+After you've run `demo.py` a few times and see how things work, feel free to start playing with the configuration files to make your own experiments or recreate the experiments from the paper.
 
 ### Plotting and Summary
 
@@ -98,11 +112,10 @@ The script `demo.py` includes a number of ways to optionally customize the plott
 * `--title`, `--xlabel`, and `--ylabel` flags that specify the labels on the plotted output.
 * `--filename` and `--ext`, which specify the name of the plot file. Essentially, the resulting data directory will contain files of the form `filename.csv` and `filename.ext`, corresponding to the summary spreadsheet and the plot file, respectively. *Note*:  Extensions are passed to `matplotlib.pyplot.savefig` and are limited by the available file formats in the library. See the [`savefig documentation`](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.savefig.html) here.
 
+---
+
 A complete description of the available options for the script `demo.py` can be obtained by running
 
 ```bash
 $ python demo.py --help
 ```
-
-
-
