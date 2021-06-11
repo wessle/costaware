@@ -67,6 +67,11 @@ is called, the experiment script `synthetic_runner.py` -- which trains tabular C
 
 ```python demo.py deep_Q```
 
-is called, `deep_Q_runner.py` -- which runs a neural network version of CARVI Q-learning on a cost-aware version of a classic Gym environment -- will be run using the experiment specified in `deep_Q_config.yml`.
+is called, `deep_Q_runner.py` -- which runs a neural network version of CARVI Q-learning on a cost-aware version of a classic Gym environment -- will be run using the experiment specified in `deep_Q_config.yml`. When the experiment is finished running, `demo.py` will also generate a plot of the algorithm performance.
 
-The configuration files `synthetic_config.yml` and `deep_Q_config.yml` contain all the experiment parameters and hyperparameters that one needs to run various types experiments.
+### Configuration Files
+
+The configuration files `synthetic_config.yml` and `deep_Q_config.yml` contain all the experiment parameters and hyperparameters that one needs to run various types of experiments. In a nutshell, a configuration file specifies an **experiment**, which is composed of one or more **trials**. A **trial** consists of
+* an environment to be trained on,
+* the type of agent to be trained,
+* algorithm hyperparameters.
