@@ -27,7 +27,7 @@ trial_sets:
       envs_module_name: 'main.core.envs'
       env_config:
         class: 'RandomMDPEnv'
-        args: [10, 10, 'r1', 'c1']  # [num_states, num_actions, reward_fnc, cost_fnc]
+        args: [5, 5, 'r1', 'c1']  # [num_states, num_actions, reward_fnc, cost_fnc]
         kwargs:
           transition_seed: 1776
       
@@ -67,7 +67,7 @@ trial_sets:
       envs_module_name: 'main.core.envs'
       env_config:
         class: 'RandomMDPEnv'
-        args: [10, 10, 'r1', 'c1']  # [num_states, num_actions, reward_fnc, cost_fnc]
+        args: [5, 5, 'r1', 'c1']  # [num_states, num_actions, reward_fnc, cost_fnc]
         kwargs:
           transition_seed: 1776
       
